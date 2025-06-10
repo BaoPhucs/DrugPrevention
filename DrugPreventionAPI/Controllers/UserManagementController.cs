@@ -2,6 +2,7 @@
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -10,31 +11,19 @@ namespace DrugPreventionAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserController : ControllerBase
+    public class UserManagementController : ControllerBase
     {
         private readonly IMapper _mapper;
-        private readonly IUserRepository _userRepository;
-        public UserController(IUserRepository userRepository, IMapper mapper)
+        private readonly IUserManagementRepository _userRepository;
+        private readonly IAdminRepository _adminRepository;
+        public UserManagementController(IUserManagementRepository userRepository, IMapper mapper, IAdminRepository adminRepository)
         {
             _userRepository = userRepository;
             _mapper = mapper;
+            _adminRepository = adminRepository;
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
-        {
-            var user = await _userRepository.LoginAsync(loginRequest.Email, loginRequest.Password);
-            if (user == null) return Unauthorized("Invalid email or password");
-            return Ok(new { user.Id, user.Email, user.Role }); // Trả về token trong thực tế
-        }
-
-        [HttpPost("google-login")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest googleRequest)
-        {
-            var user = await _userRepository.AuthenticateGoogleAsync(googleRequest.GoogleToken);
-            if (user == null) return Unauthorized("Invalid Google token");
-            return Ok(new { user.Id, user.Email, user.Role }); // Trả về token trong thực tế
-        }
+        
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserDTO registerDto)
@@ -58,9 +47,9 @@ namespace DrugPreventionAPI.Controllers
             }
 
             // Kiểm tra email đã tồn tại
-            if (await _userRepository.UserExistAsync(registerDto.Email))
+            if (await _adminRepository.UserExistAsync(registerDto.Email))
             {
-                return BadRequest("User with this email already exists");
+                return BadRequest("Email already exists");
             }
 
             // Tạo và ánh xạ thủ công sang User
@@ -103,16 +92,24 @@ namespace DrugPreventionAPI.Controllers
         }
 
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllUsers()
+        
+
+        [HttpPut("update-info")]
+        [Authorize]
+        public async Task<IActionResult> UpdateUser([FromBody] UserDTO userDto)
         {
-            var users = await _userRepository.GetAllUserAsync();
-            if (users == null || !users.Any())
+            if (userDto == null || userDto.Id <= 0)
             {
-                return NotFound("No users found");
+                return BadRequest("Invalid user data");
             }
-            var userDtos = _mapper.Map<IEnumerable<UserDTO>>(users);
-            return Ok(userDtos);
+            var user = _mapper.Map<User>(userDto);
+            var result = await _userRepository.UpdateAsync(user);
+            if (!result)
+            {
+                return StatusCode(500, "An error occurred while updating the user");
+            }
+            return NoContent(); // Trả về 204 No Content nếu cập nhật thành công
         }
+
     }
-} 
+}
