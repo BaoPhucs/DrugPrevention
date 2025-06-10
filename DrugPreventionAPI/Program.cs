@@ -18,7 +18,9 @@ namespace DrugPreventionAPI
 
             builder.Services.AddControllers();
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+            builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+            builder.Services.AddScoped<IAuthRepository, AuthRepository>();
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -28,17 +30,18 @@ namespace DrugPreventionAPI
                 option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
-            builder.Services.AddAuthentication(options =>
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie() 
+                .AddGoogle(googleOptions =>
+                {
+                    googleOptions.ClientId = builder.Configuration["GoogleAuth:ClientId"];
+                    googleOptions.ClientSecret = builder.Configuration["GoogleAuth:ClientSecret"];
+                    googleOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme; 
+                });
+
+            builder.Services.AddAuthorization(options =>
             {
-                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-            })
-            .AddCookie()
-            .AddGoogle(googleOptions =>
-            {
-                googleOptions.ClientId = builder.Configuration["GoogleAuth:ClientId"];
-                googleOptions.ClientSecret = builder.Configuration["GoogleAuth:ClientSecret"];
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("admin").RequireRole("Admin"));
             });
 
             var app = builder.Build();
@@ -51,10 +54,8 @@ namespace DrugPreventionAPI
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
-
-
             app.MapControllers();
 
             app.Run();
