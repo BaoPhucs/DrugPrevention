@@ -20,5 +20,9 @@
 
         public string? ProfileData { get; set; }
 
+        public bool? EmailVerified { get; set; }
+
+        public DateTime? CreatedDate { get; set; }
+
     }
 }

@@ -13,5 +13,7 @@
 
         public string Password { get; set; }
 
+        public string AgeGroup { get; set; }
+
     }
 }
