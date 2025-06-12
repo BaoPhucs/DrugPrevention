@@ -11,21 +11,21 @@ public partial class AppointmentRequest
 
     public int? ConsultantId { get; set; }
 
-    public int? Duration { get; set; }
+    public int? ScheduleId { get; set; }
 
     public string? Status { get; set; }
 
-    public DateTime? RequestedDateTime { get; set; }
+    public DateTime? CreatedDate { get; set; }
 
     public DateTime? CancelledDate { get; set; }
 
     public string? CancelReason { get; set; }
 
-    public DateTime? CreatedDate { get; set; }
-
     public User? Consultant { get; set; }
 
-    public ICollection<ConsultationNote> ConsultationNotes { get; set; }
+    public virtual ICollection<ConsultationNote> ConsultationNotes { get; set; } 
 
     public User? Member { get; set; }
+
+    public ConsultantSchedule? Schedule { get; set; }
 }

@@ -29,7 +29,7 @@ namespace DrugPreventionAPI.Controllers
             if (string.IsNullOrWhiteSpace(loginRequest.Email) || string.IsNullOrWhiteSpace(loginRequest.Password))
             {
                 return BadRequest("Email and password are required");
-            }
+            }   
 
             var user = await _authRepository.LoginAsync(loginRequest.Email, loginRequest.Password);
             if (user == null)

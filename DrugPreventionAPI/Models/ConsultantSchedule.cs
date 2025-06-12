@@ -17,5 +17,9 @@ public partial class ConsultantSchedule
 
     public bool? IsAvailable { get; set; }
 
+    public DateTime? CreatedDate { get; set; }
+
+    public ICollection<AppointmentRequest> AppointmentRequests { get; set; } 
+
     public User? Consultant { get; set; }
 }

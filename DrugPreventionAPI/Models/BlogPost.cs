@@ -11,15 +11,15 @@ public partial class BlogPost
 
     public string? Content { get; set; }
 
-    public string? Image { get; set; }
-
-    public string? Tags { get; set; }
+    public string? CoverImageUrl { get; set; }
 
     public int? CreatedById { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 
-    public ICollection<Comment> Comments { get; set; }
+    public DateTime? UpdatedDate { get; set; }
 
     public User? CreatedBy { get; set; }
+
+    public ICollection<Tag> Tags { get; set; }
 }

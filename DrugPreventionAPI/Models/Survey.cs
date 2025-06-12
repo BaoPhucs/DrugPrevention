@@ -11,15 +11,15 @@ public partial class Survey
 
     public string? Type { get; set; }
 
-    public string? Questions { get; set; }
-
-    public string? ScoringRules { get; set; }
-
     public int? CreatedById { get; set; }
+
+    public DateTime? CreatedDate { get; set; }
 
     public User? CreatedBy { get; set; }
 
-    public ICollection<SurveySubmission> SurveySubmissions { get; set; }
+    public ICollection<SurveyQuestion> SurveyQuestions { get; set; } 
+
+    public ICollection<SurveySubmission> SurveySubmissions { get; set; } 
 
     public ICollection<UserSurvey> UserSurveys { get; set; } 
 }

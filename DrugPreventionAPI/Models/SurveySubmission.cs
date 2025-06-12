@@ -11,8 +11,6 @@ public partial class SurveySubmission
 
     public int? MemberId { get; set; }
 
-    public string? Answers { get; set; }
-
     public int? Score { get; set; }
 
     public string? RiskLevel { get; set; }
@@ -25,5 +23,7 @@ public partial class SurveySubmission
 
     public Survey? Survey { get; set; }
 
-    public ICollection<UserSurvey> UserSurveys { get; set; }
+    public ICollection<SurveySubmissionAnswer> SurveySubmissionAnswers { get; set; } 
+
+    public ICollection<UserSurvey> UserSurveys { get; set; } 
 }

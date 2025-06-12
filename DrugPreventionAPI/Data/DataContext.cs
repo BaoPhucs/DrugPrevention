@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using DrugPreventionAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +7,6 @@ namespace DrugPreventionAPI.Data;
 
 public partial class DataContext : DbContext
 {
-    public DataContext()
-    {
-    }
-
     public DataContext(DbContextOptions<DataContext> options)
         : base(options)
     {
@@ -33,52 +28,71 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<Course> Courses { get; set; }
 
-    public virtual DbSet<CourseEnrollment> CourseEnrollments { get; set; }
+    public virtual DbSet<CourseMaterial> CourseMaterials { get; set; }
+
+    public virtual DbSet<InquiryAssignment> InquiryAssignments { get; set; }
+
+    public virtual DbSet<InquiryComment> InquiryComments { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<QuestionBank> QuestionBanks { get; set; }
+
+    public virtual DbSet<QuestionOption> QuestionOptions { get; set; }
+
     public virtual DbSet<QuizSubmission> QuizSubmissions { get; set; }
+
+    public virtual DbSet<QuizSubmissionAnswer> QuizSubmissionAnswers { get; set; }
 
     public virtual DbSet<Survey> Surveys { get; set; }
 
+    public virtual DbSet<SurveyOption> SurveyOptions { get; set; }
+
+    public virtual DbSet<SurveyQuestion> SurveyQuestions { get; set; }
+
     public virtual DbSet<SurveySubmission> SurveySubmissions { get; set; }
+
+    public virtual DbSet<SurveySubmissionAnswer> SurveySubmissionAnswers { get; set; }
+
+    public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserInquiry> UserInquiries { get; set; }
 
-    public virtual DbSet<UserInquiryMessage> UserInquiryMessages { get; set; }
-
     public virtual DbSet<UserSurvey> UserSurveys { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Name=DefaultConnection");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ActivityParticipation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Activity__3214EC2706E12022");
+            entity.HasKey(e => e.Id).HasName("PK__Activity__3214EC27C6EEF850");
 
             entity.ToTable("ActivityParticipation");
 
             entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.ActivityId).HasColumnName("ActivityID");
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
-            entity.Property(e => e.ProgramId).HasColumnName("ProgramID");
-            entity.Property(e => e.RegistrationDate).HasColumnType("datetime");
+            entity.Property(e => e.RegistrationDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Registered");
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.ActivityParticipations)
+                .HasForeignKey(d => d.ActivityId)
+                .HasConstraintName("FK_ActivityParticipation_Activity");
 
             entity.HasOne(d => d.Member).WithMany(p => p.ActivityParticipations)
                 .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK__ActivityP__Membe__7A672E12");
-
-            entity.HasOne(d => d.Program).WithMany(p => p.ActivityParticipations)
-                .HasForeignKey(d => d.ProgramId)
-                .HasConstraintName("FK__ActivityP__Progr__797309D9");
+                .HasConstraintName("FK_ActivityParticipation_Member");
         });
 
         modelBuilder.Entity<AppointmentRequest>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Appointm__3214EC27FE81B743");
+            entity.HasKey(e => e.Id).HasName("PK__Appointm__3214EC27D3D09ADD");
 
             entity.ToTable("AppointmentRequest");
 
@@ -88,10 +102,11 @@ public partial class DataContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.CancelledDate).HasColumnType("datetime");
             entity.Property(e => e.ConsultantId).HasColumnName("ConsultantID");
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
-            entity.Property(e => e.Duration).HasDefaultValue(60);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
-            entity.Property(e => e.RequestedDateTime).HasColumnType("datetime");
+            entity.Property(e => e.ScheduleId).HasColumnName("ScheduleID");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -99,72 +114,109 @@ public partial class DataContext : DbContext
 
             entity.HasOne(d => d.Consultant).WithMany(p => p.AppointmentRequestConsultants)
                 .HasForeignKey(d => d.ConsultantId)
-                .HasConstraintName("FK__Appointme__Consu__52593CB8");
+                .HasConstraintName("FK_AppointmentRequest_Consultant");
 
             entity.HasOne(d => d.Member).WithMany(p => p.AppointmentRequestMembers)
                 .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK__Appointme__Membe__5165187F");
+                .HasConstraintName("FK_AppointmentRequest_Member");
+
+            entity.HasOne(d => d.Schedule).WithMany(p => p.AppointmentRequests)
+                .HasForeignKey(d => d.ScheduleId)
+                .HasConstraintName("FK_AppointmentRequest_Schedule");
         });
 
         modelBuilder.Entity<BlogPost>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__BlogPost__3214EC2718B65F99");
+            entity.HasKey(e => e.Id).HasName("PK__BlogPost__3214EC27E5590608");
 
             entity.ToTable("BlogPost");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.Content).HasColumnType("text");
+            entity.Property(e => e.Content).IsUnicode(false);
+            entity.Property(e => e.CoverImageUrl)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("CoverImageURL");
             entity.Property(e => e.CreatedById).HasColumnName("CreatedByID");
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
-            entity.Property(e => e.Image).HasColumnType("text");
-            entity.Property(e => e.Tags)
-                .HasMaxLength(200)
-                .IsUnicode(false);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
 
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.BlogPosts)
                 .HasForeignKey(d => d.CreatedById)
-                .HasConstraintName("FK__BlogPost__Create__7D439ABD");
+                .HasConstraintName("FK_BlogPost_Author");
+
+            entity.HasMany(d => d.Tags).WithMany(p => p.BlogPosts)
+                .UsingEntity<Dictionary<string, object>>(
+                    "BlogTag",
+                    r => r.HasOne<Tag>().WithMany()
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_BlogTag_Tag"),
+                    l => l.HasOne<BlogPost>().WithMany()
+                        .HasForeignKey("BlogPostId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_BlogTag_Post"),
+                    j =>
+                    {
+                        j.HasKey("BlogPostId", "TagId");
+                        j.ToTable("BlogTag");
+                        j.IndexerProperty<int>("BlogPostId").HasColumnName("BlogPostID");
+                        j.IndexerProperty<int>("TagId").HasColumnName("TagID");
+                    });
         });
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Comment__3214EC2754549251");
+            entity.HasKey(e => e.Id).HasName("PK__Comment__3214EC275602B43A");
 
             entity.ToTable("Comment");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.BlogPostId).HasColumnName("BlogPostID");
-            entity.Property(e => e.Content).HasColumnType("text");
+            entity.Property(e => e.Content).IsUnicode(false);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.EntityId).HasColumnName("EntityID");
+            entity.Property(e => e.EntityType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
             entity.Property(e => e.ParentCommentId).HasColumnName("ParentCommentID");
-            entity.Property(e => e.Timestamp).HasColumnType("datetime");
-
-            entity.HasOne(d => d.BlogPost).WithMany(p => p.Comments)
-                .HasForeignKey(d => d.BlogPostId)
-                .HasConstraintName("FK__Comment__BlogPos__00200768");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Visible");
 
             entity.HasOne(d => d.Member).WithMany(p => p.Comments)
                 .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK__Comment__MemberI__01142BA1");
+                .HasConstraintName("FK_Comment_Member");
 
             entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
                 .HasForeignKey(d => d.ParentCommentId)
-                .HasConstraintName("FK__Comment__ParentC__02084FDA");
+                .HasConstraintName("FK_Comment_Parent");
         });
 
         modelBuilder.Entity<CommunicationActivity>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Communic__3214EC27DD6E360F");
+            entity.HasKey(e => e.Id).HasName("PK__Communic__3214EC27173C6DCF");
 
             entity.ToTable("CommunicationActivity");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.Content).HasColumnType("text");
             entity.Property(e => e.CreatedById).HasColumnName("CreatedByID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).IsUnicode(false);
             entity.Property(e => e.EventDate).HasColumnType("datetime");
+            entity.Property(e => e.Location)
+                .HasMaxLength(200)
+                .IsUnicode(false);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -175,53 +227,58 @@ public partial class DataContext : DbContext
 
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.CommunicationActivities)
                 .HasForeignKey(d => d.CreatedById)
-                .HasConstraintName("FK__Communica__Creat__76969D2E");
+                .HasConstraintName("FK_CommunicationActivity_Creator");
         });
 
         modelBuilder.Entity<ConsultantSchedule>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Consulta__3214EC27659EAFE1");
+            entity.HasKey(e => e.Id).HasName("PK__Consulta__3214EC274CE11072");
 
             entity.ToTable("ConsultantSchedule");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.ConsultantId).HasColumnName("ConsultantID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.IsAvailable).HasDefaultValue(true);
 
             entity.HasOne(d => d.Consultant).WithMany(p => p.ConsultantSchedules)
                 .HasForeignKey(d => d.ConsultantId)
-                .HasConstraintName("FK__Consultan__Consu__4D94879B");
+                .HasConstraintName("FK_ConsultantSchedule_User");
         });
 
         modelBuilder.Entity<ConsultationNote>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Consulta__3214EC27F92A35F1");
+            entity.HasKey(e => e.Id).HasName("PK__Consulta__3214EC27A1738B3F");
 
             entity.ToTable("ConsultationNote");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.ConsultantId).HasColumnName("ConsultantID");
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
-            entity.Property(e => e.Notes).HasColumnType("text");
+            entity.Property(e => e.Notes).IsUnicode(false);
 
             entity.HasOne(d => d.Appointment).WithMany(p => p.ConsultationNotes)
                 .HasForeignKey(d => d.AppointmentId)
-                .HasConstraintName("FK__Consultat__Appoi__571DF1D5");
+                .HasConstraintName("FK_ConsultationNote_Appointment");
 
             entity.HasOne(d => d.Consultant).WithMany(p => p.ConsultationNoteConsultants)
                 .HasForeignKey(d => d.ConsultantId)
-                .HasConstraintName("FK__Consultat__Consu__5812160E");
+                .HasConstraintName("FK_ConsultationNote_Consultant");
 
             entity.HasOne(d => d.Member).WithMany(p => p.ConsultationNoteMembers)
                 .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK__Consultat__Membe__59063A47");
+                .HasConstraintName("FK_ConsultationNote_Member");
         });
 
         modelBuilder.Entity<Course>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Course__3214EC27CB2ED758");
+            entity.HasKey(e => e.Id).HasName("PK__Course__3214EC273ED51E76");
 
             entity.ToTable("Course");
 
@@ -229,10 +286,12 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Category)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            entity.Property(e => e.Content).HasColumnType("text");
+            entity.Property(e => e.Content).IsUnicode(false);
             entity.Property(e => e.CreatedById).HasColumnName("CreatedByID");
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
-            entity.Property(e => e.Description).HasColumnType("text");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).IsUnicode(false);
             entity.Property(e => e.Image)
                 .HasMaxLength(200)
                 .IsUnicode(false);
@@ -240,7 +299,6 @@ public partial class DataContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false);
             entity.Property(e => e.PassingScore).HasDefaultValue(70);
-            entity.Property(e => e.QuizQuestions).HasColumnType("text");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -251,42 +309,132 @@ public partial class DataContext : DbContext
 
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.Courses)
                 .HasForeignKey(d => d.CreatedById)
-                .HasConstraintName("FK__Course__CreatedB__5DCAEF64");
+                .HasConstraintName("FK_Course_Creator");
+
+            entity.HasMany(d => d.Questions).WithMany(p => p.Courses)
+                .UsingEntity<Dictionary<string, object>>(
+                    "CourseQuestion",
+                    r => r.HasOne<QuestionBank>().WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_CourseQuestion_Question"),
+                    l => l.HasOne<Course>().WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_CourseQuestion_Course"),
+                    j =>
+                    {
+                        j.HasKey("CourseId", "QuestionId");
+                        j.ToTable("CourseQuestion");
+                        j.IndexerProperty<int>("CourseId").HasColumnName("CourseID");
+                        j.IndexerProperty<int>("QuestionId").HasColumnName("QuestionID");
+                    });
         });
 
-        modelBuilder.Entity<CourseEnrollment>(entity =>
+        modelBuilder.Entity<CourseMaterial>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__CourseEn__3214EC27F5646850");
+            entity.HasKey(e => e.Id).HasName("PK__CourseMa__3214EC27ACF8C0FC");
 
-            entity.ToTable("CourseEnrollment");
+            entity.ToTable("CourseMaterial");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.CourseId).HasColumnName("CourseID");
-            entity.Property(e => e.MemberId).HasColumnName("MemberID");
-            entity.Property(e => e.Status)
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).IsUnicode(false);
+            entity.Property(e => e.Title)
+                .HasMaxLength(200)
+                .IsUnicode(false);
+            entity.Property(e => e.Type)
                 .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Url)
                 .IsUnicode(false)
-                .HasDefaultValue("Enrolled");
-            entity.Property(e => e.SubmissionDate).HasColumnType("datetime");
+                .HasColumnName("URL");
 
-            entity.HasOne(d => d.Course).WithMany(p => p.CourseEnrollments)
+            entity.HasOne(d => d.Course).WithMany(p => p.CourseMaterials)
                 .HasForeignKey(d => d.CourseId)
-                .HasConstraintName("FK__CourseEnr__Cours__60A75C0F");
+                .HasConstraintName("FK_CourseMaterial_Course");
+        });
 
-            entity.HasOne(d => d.Member).WithMany(p => p.CourseEnrollments)
-                .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK__CourseEnr__Membe__619B8048");
+        modelBuilder.Entity<InquiryAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__InquiryA__3214EC27E8A4C774");
+
+            entity.ToTable("InquiryAssignment");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.AssignedById).HasColumnName("AssignedByID");
+            entity.Property(e => e.AssignedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.AssignedToId).HasColumnName("AssignedToID");
+            entity.Property(e => e.InquiryId).HasColumnName("InquiryID");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Priority)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.AssignedBy).WithMany(p => p.InquiryAssignmentAssignedBies)
+                .HasForeignKey(d => d.AssignedById)
+                .HasConstraintName("FK_InquiryAssignment_By");
+
+            entity.HasOne(d => d.AssignedTo).WithMany(p => p.InquiryAssignmentAssignedTos)
+                .HasForeignKey(d => d.AssignedToId)
+                .HasConstraintName("FK_InquiryAssignment_To");
+
+            entity.HasOne(d => d.Inquiry).WithMany(p => p.InquiryAssignments)
+                .HasForeignKey(d => d.InquiryId)
+                .HasConstraintName("FK_InquiryAssignment_Inquiry");
+        });
+
+        modelBuilder.Entity<InquiryComment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__InquiryC__3214EC27E9C25829");
+
+            entity.ToTable("InquiryComment");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.AttachmentType)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.AttachmentUrl)
+                .IsUnicode(false)
+                .HasColumnName("AttachmentURL");
+            entity.Property(e => e.CommentById).HasColumnName("CommentByID");
+            entity.Property(e => e.CommentText).IsUnicode(false);
+            entity.Property(e => e.CommentType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.FileName)
+                .HasMaxLength(200)
+                .IsUnicode(false);
+            entity.Property(e => e.InquiryId).HasColumnName("InquiryID");
+
+            entity.HasOne(d => d.CommentBy).WithMany(p => p.InquiryComments)
+                .HasForeignKey(d => d.CommentById)
+                .HasConstraintName("FK_InquiryComment_By");
+
+            entity.HasOne(d => d.Inquiry).WithMany(p => p.InquiryComments)
+                .HasForeignKey(d => d.InquiryId)
+                .HasConstraintName("FK_InquiryComment_Inquiry");
         });
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Notifica__3214EC277D4ED84F");
+            entity.HasKey(e => e.Id).HasName("PK__Notifica__3214EC27F33EFE7F");
 
             entity.ToTable("Notification");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.Message).HasColumnType("text");
-            entity.Property(e => e.SendDate).HasColumnType("datetime");
+            entity.Property(e => e.Message).IsUnicode(false);
+            entity.Property(e => e.SendDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);
@@ -297,93 +445,232 @@ public partial class DataContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__Notificat__UserI__04E4BC85");
+                .HasConstraintName("FK_Notification_User");
+        });
+
+        modelBuilder.Entity<QuestionBank>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Question__3214EC27AF1DCD51");
+
+            entity.ToTable("QuestionBank");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Level)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.QuestionText).IsUnicode(false);
+        });
+
+        modelBuilder.Entity<QuestionOption>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Question__3214EC27E9861141");
+
+            entity.ToTable("QuestionOption");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.OptionText)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.QuestionOptions)
+                .HasForeignKey(d => d.QuestionId)
+                .HasConstraintName("FK_QuestionOption_Question");
         });
 
         modelBuilder.Entity<QuizSubmission>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__QuizSubm__3214EC27266FF610");
+            entity.HasKey(e => e.Id).HasName("PK__QuizSubm__3214EC27922467CE");
 
             entity.ToTable("QuizSubmission");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.CourseId).HasColumnName("CourseID");
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
-            entity.Property(e => e.SubmissionDate).HasColumnType("datetime");
+            entity.Property(e => e.SubmissionDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
 
             entity.HasOne(d => d.Course).WithMany(p => p.QuizSubmissions)
                 .HasForeignKey(d => d.CourseId)
-                .HasConstraintName("FK__QuizSubmi__Cours__656C112C");
+                .HasConstraintName("FK_QuizSubmission_Course");
 
             entity.HasOne(d => d.Member).WithMany(p => p.QuizSubmissions)
                 .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK__QuizSubmi__Membe__66603565");
+                .HasConstraintName("FK_QuizSubmission_Member");
+        });
+
+        modelBuilder.Entity<QuizSubmissionAnswer>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__QuizSubm__3214EC27DC738DDA");
+
+            entity.ToTable("QuizSubmissionAnswer");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.OptionId).HasColumnName("OptionID");
+            entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
+            entity.Property(e => e.SubmissionId).HasColumnName("SubmissionID");
+
+            entity.HasOne(d => d.Option).WithMany(p => p.QuizSubmissionAnswers)
+                .HasForeignKey(d => d.OptionId)
+                .HasConstraintName("FK_QSA_Option");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.QuizSubmissionAnswers)
+                .HasForeignKey(d => d.QuestionId)
+                .HasConstraintName("FK_QSA_Question");
+
+            entity.HasOne(d => d.Submission).WithMany(p => p.QuizSubmissionAnswers)
+                .HasForeignKey(d => d.SubmissionId)
+                .HasConstraintName("FK_QSA_Submission");
         });
 
         modelBuilder.Entity<Survey>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Survey__3214EC2711A38236");
+            entity.HasKey(e => e.Id).HasName("PK__Survey__3214EC274D9D4BF3");
 
             entity.ToTable("Survey");
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.CreatedById).HasColumnName("CreatedByID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.Name)
                 .HasMaxLength(200)
                 .IsUnicode(false);
-            entity.Property(e => e.Questions).HasColumnType("text");
-            entity.Property(e => e.ScoringRules).HasColumnType("text");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
                 .IsUnicode(false);
 
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.Surveys)
                 .HasForeignKey(d => d.CreatedById)
-                .HasConstraintName("FK__Survey__CreatedB__693CA210");
+                .HasConstraintName("FK_Survey_Creator");
+        });
+
+        modelBuilder.Entity<SurveyOption>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SurveyOp__3214EC279697063B");
+
+            entity.ToTable("SurveyOption");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.OptionText)
+                .HasMaxLength(500)
+                .IsUnicode(false);
+            entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.SurveyOptions)
+                .HasForeignKey(d => d.QuestionId)
+                .HasConstraintName("FK_SurveyOption_Question");
+        });
+
+        modelBuilder.Entity<SurveyQuestion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SurveyQu__3214EC2774CD1051");
+
+            entity.ToTable("SurveyQuestion");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.QuestionText).IsUnicode(false);
+            entity.Property(e => e.SurveyId).HasColumnName("SurveyID");
+
+            entity.HasOne(d => d.Survey).WithMany(p => p.SurveyQuestions)
+                .HasForeignKey(d => d.SurveyId)
+                .HasConstraintName("FK_SurveyQuestion_Survey");
         });
 
         modelBuilder.Entity<SurveySubmission>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__SurveySu__3214EC270CF03888");
+            entity.HasKey(e => e.Id).HasName("PK__SurveySu__3214EC273F53121C");
 
             entity.ToTable("SurveySubmission");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.Answers).HasColumnType("text");
             entity.Property(e => e.IsAnonymous).HasDefaultValue(false);
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
             entity.Property(e => e.RiskLevel)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.SubmissionDate).HasColumnType("datetime");
+            entity.Property(e => e.SubmissionDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.SurveyId).HasColumnName("SurveyID");
 
             entity.HasOne(d => d.Member).WithMany(p => p.SurveySubmissions)
                 .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK__SurveySub__Membe__6D0D32F4");
+                .HasConstraintName("FK_SurveySubmission_Member");
 
             entity.HasOne(d => d.Survey).WithMany(p => p.SurveySubmissions)
                 .HasForeignKey(d => d.SurveyId)
-                .HasConstraintName("FK__SurveySub__Surve__6C190EBB");
+                .HasConstraintName("FK_SurveySubmission_Survey");
+        });
+
+        modelBuilder.Entity<SurveySubmissionAnswer>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SurveySu__3214EC2760BC51C2");
+
+            entity.ToTable("SurveySubmissionAnswer");
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.OptionId).HasColumnName("OptionID");
+            entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
+            entity.Property(e => e.SubmissionId).HasColumnName("SubmissionID");
+
+            entity.HasOne(d => d.Option).WithMany(p => p.SurveySubmissionAnswers)
+                .HasForeignKey(d => d.OptionId)
+                .HasConstraintName("FK_SSA_Option");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.SurveySubmissionAnswers)
+                .HasForeignKey(d => d.QuestionId)
+                .HasConstraintName("FK_SSA_Question");
+
+            entity.HasOne(d => d.Submission).WithMany(p => p.SurveySubmissionAnswers)
+                .HasForeignKey(d => d.SubmissionId)
+                .HasConstraintName("FK_SSA_Submission");
+        });
+
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Tag__3214EC27415F3F10");
+
+            entity.ToTable("Tag");
+
+            entity.HasIndex(e => e.Name, "UQ__Tag__737584F67019ABFA").IsUnique();
+
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__User__3214EC276A98FD1A");
+            entity.HasKey(e => e.Id).HasName("PK__User__3214EC271A11D3C6");
 
             entity.ToTable("User");
 
-            entity.HasIndex(e => e.Email, "UQ__User__A9D10534F7E10660").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__User__A9D1053436AD7F09").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.AgeGroup)
                 .HasMaxLength(20)
                 .IsUnicode(false);
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.Dob).HasColumnName("DOB");
-            entity.Property(e => e.Phone)
-                .HasMaxLength(20)
-                .IsUnicode(false);
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
                 .IsUnicode(false);
@@ -394,7 +681,10 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
                 .IsUnicode(false);
-            entity.Property(e => e.ProfileData).HasColumnType("text");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.ProfileData).IsUnicode(false);
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -402,18 +692,18 @@ public partial class DataContext : DbContext
 
         modelBuilder.Entity<UserInquiry>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserInqu__3214EC27697AF84F");
+            entity.HasKey(e => e.Id).HasName("PK__UserInqu__3214EC27D3340BD8");
 
             entity.ToTable("UserInquiry");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.AssignedToId).HasColumnName("AssignedToID");
             entity.Property(e => e.CreatedById).HasColumnName("CreatedByID");
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
-            entity.Property(e => e.LastUpdated).HasColumnType("datetime");
-            entity.Property(e => e.Priority)
-                .HasMaxLength(20)
-                .IsUnicode(false);
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.LastUpdated)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -422,44 +712,21 @@ public partial class DataContext : DbContext
                 .HasMaxLength(200)
                 .IsUnicode(false);
 
-            entity.HasOne(d => d.AssignedTo).WithMany(p => p.UserInquiryAssignedTos)
-                .HasForeignKey(d => d.AssignedToId)
-                .HasConstraintName("FK__UserInqui__Assig__08B54D69");
-
-            entity.HasOne(d => d.CreatedBy).WithMany(p => p.UserInquiryCreatedBies)
+            entity.HasOne(d => d.CreatedBy).WithMany(p => p.UserInquiries)
                 .HasForeignKey(d => d.CreatedById)
-                .HasConstraintName("FK__UserInqui__Creat__07C12930");
-        });
-
-        modelBuilder.Entity<UserInquiryMessage>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__UserInqu__3214EC276D490F3E");
-
-            entity.ToTable("UserInquiryMessage");
-
-            entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.InquiryId).HasColumnName("InquiryID");
-            entity.Property(e => e.Message).HasColumnType("text");
-            entity.Property(e => e.SenderId).HasColumnName("SenderID");
-            entity.Property(e => e.Timestamp).HasColumnType("datetime");
-
-            entity.HasOne(d => d.Inquiry).WithMany(p => p.UserInquiryMessages)
-                .HasForeignKey(d => d.InquiryId)
-                .HasConstraintName("FK__UserInqui__Inqui__0C85DE4D");
-
-            entity.HasOne(d => d.Sender).WithMany(p => p.UserInquiryMessages)
-                .HasForeignKey(d => d.SenderId)
-                .HasConstraintName("FK__UserInqui__Sende__0D7A0286");
+                .HasConstraintName("FK_UserInquiry_Creator");
         });
 
         modelBuilder.Entity<UserSurvey>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserSurv__3214EC273876A689");
+            entity.HasKey(e => e.Id).HasName("PK__UserSurv__3214EC27CB3EA0A1");
 
             entity.ToTable("UserSurvey");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.RoleInSurvey)
                 .HasMaxLength(20)
                 .IsUnicode(false);
@@ -469,15 +736,15 @@ public partial class DataContext : DbContext
 
             entity.HasOne(d => d.Submission).WithMany(p => p.UserSurveys)
                 .HasForeignKey(d => d.SubmissionId)
-                .HasConstraintName("FK__UserSurve__Submi__72C60C4A");
+                .HasConstraintName("FK_UserSurvey_Submission");
 
             entity.HasOne(d => d.Survey).WithMany(p => p.UserSurveys)
                 .HasForeignKey(d => d.SurveyId)
-                .HasConstraintName("FK__UserSurve__Surve__71D1E811");
+                .HasConstraintName("FK_UserSurvey_Survey");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserSurveys)
                 .HasForeignKey(d => d.UserId)
-                .HasConstraintName("FK__UserSurve__UserI__70DDC3D8");
+                .HasConstraintName("FK_UserSurvey_User");
         });
 
         OnModelCreatingPartial(modelBuilder);
