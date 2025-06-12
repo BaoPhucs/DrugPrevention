@@ -21,8 +21,6 @@ public partial class Course
 
     public int? Duration { get; set; }
 
-    public string? QuizQuestions { get; set; }
-
     public int? PassingScore { get; set; }
 
     public string? Status { get; set; }
@@ -31,8 +29,11 @@ public partial class Course
 
     public DateTime? CreatedDate { get; set; }
 
-    public ICollection<CourseEnrollment> CourseEnrollments { get; set; }
+    public ICollection<CourseMaterial> CourseMaterials { get; set; }
+
     public User? CreatedBy { get; set; }
 
-    public ICollection<QuizSubmission> QuizSubmissions { get; set; }
+    public ICollection<QuizSubmission> QuizSubmissions { get; set; } 
+
+    public ICollection<QuestionBank> Questions { get; set; } 
 }

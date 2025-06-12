@@ -20,4 +20,6 @@ public partial class QuizSubmission
     public Course? Course { get; set; }
 
     public User? Member { get; set; }
+
+    public ICollection<QuizSubmissionAnswer> QuizSubmissionAnswers { get; set; }
 }
