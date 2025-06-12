@@ -122,5 +122,20 @@ namespace DrugPreventionAPI.Controllers
             }
             return NoContent(); // Trả về 204 No Content nếu cập nhật thành công
         }
+
+
+        [HttpPost("force-reset-password/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ForceResetPassword(int userId, [FromBody] ForceResetPasswordDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.NewPassword))
+                return BadRequest("NewPassword must be provided");
+
+            var result = await _adminRepository.ForceResetPasswordAsync(userId, dto.NewPassword);
+            if (!result)
+                return NotFound($"User with ID {userId} not found or reset failed");
+
+            return Ok("Password has been reset successfully");
+        }
     }
 }

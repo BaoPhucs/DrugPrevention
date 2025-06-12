@@ -11,6 +11,7 @@ namespace DrugPreventionAPI.Helper
             CreateMap<User, RegisterUserDTO>();
             CreateMap<RegisterUserDTO, User>();
             CreateMap<User, UserDTO>();
+            CreateMap<UserDTO, User>();
         }
     }
 }

@@ -5,6 +5,7 @@ using DrugPreventionAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace DrugPreventionAPI.Controllers
@@ -112,15 +113,13 @@ namespace DrugPreventionAPI.Controllers
         }
 
         //this function to get the current user information based on the JWT token
-        [HttpGet("me")]
+        [HttpGet("aboutMe")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
-            var currentUserId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-            if (currentUserId <= 0)
-            {
+            var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(claimValue, out var currentUserId) || currentUserId <= 0)
                 return Unauthorized("Invalid user ID");
-            }
             var user = await _userRepository.GetCurrentUserAsync(currentUserId);
             if (user == null)
             {
