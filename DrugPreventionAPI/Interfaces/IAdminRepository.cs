@@ -12,5 +12,8 @@ namespace DrugPreventionAPI.Interfaces
         Task<bool> UserExistAsync(string email); // Checks if a user exists by email
         Task<User> GetByIdAsync(int id);
         Task<User> GetProfileAsync(string email);
+
+        Task<bool> UpdateUserByAdminAsync(User user);
+        Task<bool> ForceResetPasswordAsync(int userId, string newPassword);
     }
 }
