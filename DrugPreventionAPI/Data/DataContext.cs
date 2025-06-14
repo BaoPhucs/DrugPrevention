@@ -306,7 +306,13 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);
-
+            entity.Property(e => e.ReviewComments)
+                .HasMaxLength(int.MaxValue)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdateById).HasColumnName("UpdateByID");
+            entity.Property(e => e.UpdateDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.Courses)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_Course_Creator");
