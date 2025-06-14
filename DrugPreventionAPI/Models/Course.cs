@@ -23,11 +23,17 @@ public partial class Course
 
     public int? PassingScore { get; set; }
 
-    public string? Status { get; set; }
+    public string? Status { get; set; } = "Pending";
 
     public int? CreatedById { get; set; }
 
     public DateTime? CreatedDate { get; set; }
+
+    public string? ReviewComments { get; set; }
+
+    public int? UpdateById { get; set; }
+
+    public DateTime? UpdateDate { get; set; }
 
     public ICollection<CourseMaterial> CourseMaterials { get; set; }
 

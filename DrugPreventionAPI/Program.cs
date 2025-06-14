@@ -21,6 +21,8 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
             builder.Services.AddScoped<IAdminRepository, AdminRepository>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+            builder.Services.AddScoped<ICourseRepository, CourseRepository>();
+            builder.Services.AddScoped<ICourseMaterialRepository, CourseMaterialRepository>();
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
