@@ -16,7 +16,16 @@ namespace DrugPreventionAPI.Repositories
             _context = context;
             _configuration = configuration;
         }
-        
+
+        public Task<User?> GetByIdAsync(int id)
+        {
+            return _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        }
+
+        public async Task<User?> GetCurrentUserAsync(int currentUserId)
+        {
+            return await GetByIdAsync(currentUserId);
+        }
 
         public async Task<bool> RegisterAsync(User user)
         {

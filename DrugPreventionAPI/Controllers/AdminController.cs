@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
+using DrugPreventionAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -101,6 +102,40 @@ namespace DrugPreventionAPI.Controllers
             }
             var userDtos = _mapper.Map<IEnumerable<UserDTO>>(users);
             return Ok(userDtos);
+        }
+
+
+        [HttpPut("update-user/{userId}")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> UpdateUser(int userId, [FromBody] UserDTO userDto)
+        {
+            if (userDto == null || userDto.Id != userId)
+            {
+                return BadRequest("Invalid user data");
+            }
+            var user = _mapper.Map<User>(userDto);
+            user.Id = userId; // Đảm bảo ID của người dùng được cập nhật là ID đã cho
+            var result = await _adminRepository.UpdateUserByAdminAsync(user);
+            if (!result)
+            {
+                return NotFound($"User with ID {userId} not found or update failed");
+            }
+            return NoContent(); // Trả về 204 No Content nếu cập nhật thành công
+        }
+
+
+        [HttpPost("force-reset-password/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ForceResetPassword(int userId, [FromBody] ForceResetPasswordDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.NewPassword))
+                return BadRequest("NewPassword must be provided");
+
+            var result = await _adminRepository.ForceResetPasswordAsync(userId, dto.NewPassword);
+            if (!result)
+                return NotFound($"User with ID {userId} not found or reset failed");
+
+            return Ok("Password has been reset successfully");
         }
     }
 }

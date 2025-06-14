@@ -19,6 +19,7 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CourseMaterial, CourseMaterialDTO>();
             CreateMap<CourseMaterialDTO, CourseMaterial>();
             CreateMap<CourseMaterial, CourseMaterialReadDTO>();
+            CreateMap<UserDTO, User>();
         }
     }
 }

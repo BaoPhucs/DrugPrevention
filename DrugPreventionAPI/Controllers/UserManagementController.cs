@@ -5,6 +5,7 @@ using DrugPreventionAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace DrugPreventionAPI.Controllers
@@ -23,7 +24,7 @@ namespace DrugPreventionAPI.Controllers
             _adminRepository = adminRepository;
         }
 
-        
+
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterUserDTO registerDto)
@@ -92,7 +93,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
 
-        
+
 
         [HttpPut("update-info")]
         [Authorize]
@@ -111,5 +112,23 @@ namespace DrugPreventionAPI.Controllers
             return NoContent(); // Trả về 204 No Content nếu cập nhật thành công
         }
 
+        //this function to get the current user information based on the JWT token
+        [HttpGet("aboutMe")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(claimValue, out var currentUserId) || currentUserId <= 0)
+                return Unauthorized("Invalid user ID");
+            var user = await _userRepository.GetCurrentUserAsync(currentUserId);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+            var userDto = _mapper.Map<UserDTO>(user);
+            return Ok(userDto);
+
+
+        }
     }
 }

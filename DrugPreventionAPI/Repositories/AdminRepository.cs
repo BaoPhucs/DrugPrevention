@@ -66,5 +66,31 @@ namespace DrugPreventionAPI.Repositories
         {
             return await _context.Users.CountAsync(); // Returns the total number of users in the system
         }
+
+        public async Task<bool> UpdateUserByAdminAsync(User user)
+        {
+            var ex = await _context.Users
+                           .FirstOrDefaultAsync(u => u.Id == user.Id);
+            if (ex == null)
+                return false;
+
+            ex.Name = user.Name;
+            ex.Role = user.Role;
+            ex.AgeGroup = user.AgeGroup;
+            ex.ProfileData = user.ProfileData;
+            // không cập nhật Password, EmailVerified,…
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ForceResetPasswordAsync(int userId, string newPassword)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return false;
+            user.Password = newPassword;  // hãy hash mật khẩu
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }
