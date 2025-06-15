@@ -35,6 +35,8 @@ public partial class Course
 
     public DateTime? UpdateDate { get; set; }
 
+    public ICollection<CourseEnrollment> CourseEnrollments { get; set; }
+
     public ICollection<CourseMaterial> CourseMaterials { get; set; }
 
     public User? CreatedBy { get; set; }

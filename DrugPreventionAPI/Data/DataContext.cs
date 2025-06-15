@@ -28,6 +28,8 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<Course> Courses { get; set; }
 
+    public virtual DbSet<CourseEnrollment> CourseEnrollments { get; set; }  
+
     public virtual DbSet<CourseMaterial> CourseMaterials { get; set; }
 
     public virtual DbSet<InquiryAssignment> InquiryAssignments { get; set; }
@@ -335,6 +337,29 @@ public partial class DataContext : DbContext
                         j.IndexerProperty<int>("CourseId").HasColumnName("CourseID");
                         j.IndexerProperty<int>("QuestionId").HasColumnName("QuestionID");
                     });
+        });
+
+
+        modelBuilder.Entity<CourseEnrollment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__CourseEn__3214EC27B3F5A0D1");
+            entity.ToTable("CourseEnrollment");
+            entity.Property(e => e.Id).HasColumnName("ID");
+            entity.Property(e => e.CourseId).HasColumnName("CourseID");
+            entity.Property(e => e.ParticipationDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.MemberId).HasColumnName("MemberID");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Enrolled");
+            entity.HasOne(d => d.Course).WithMany(p => p.CourseEnrollments)
+                .HasForeignKey(d => d.CourseId)
+                .HasConstraintName("FK_CourseEnrollment_Course");
+            entity.HasOne(d => d.Member).WithMany(p => p.CourseEnrollments)
+                .HasForeignKey(d => d.MemberId)
+                .HasConstraintName("FK_CourseEnrollment_Member");
         });
 
         modelBuilder.Entity<CourseMaterial>(entity =>

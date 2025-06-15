@@ -33,6 +33,8 @@ public partial class User
 
     public ICollection<AppointmentRequest> AppointmentRequestMembers { get; set; } 
 
+    public ICollection<CourseEnrollment> CourseEnrollments { get; set; }
+
     public ICollection<BlogPost> BlogPosts { get; set; } 
 
     public ICollection<Comment> Comments { get; set; } 
