@@ -20,6 +20,47 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CourseMaterialDTO, CourseMaterial>();
             CreateMap<CourseMaterial, CourseMaterialReadDTO>();
             CreateMap<UserDTO, User>();
+            CreateMap<CourseEnrollment, CourseEnrollmentDTO>();
+
+            // 1) QuizSubmissionAnswer → QuizAnswerDTO
+            CreateMap<QuizSubmissionAnswer, QuizAnswerDTO>()
+                // QuizSubmissionAnswer.QuestionId là int? nên phải null-coalesce
+                .ForMember(d => d.QuestionId, o => o.MapFrom(s => s.QuestionId ?? 0))
+                .ForMember(d => d.OptionId, o => o.MapFrom(s => s.OptionId ?? 0));
+
+            // 2) QuizSubmission → QuizSubmissionReadDTO
+            CreateMap<QuizSubmission, QuizSubmissionReadDTO>();
+
+            // 3) QuizSubmission → QuizSubmissionDetailDTO, include Answers
+            CreateMap<QuizSubmission, QuizSubmissionDetailDTO>()
+                .ForMember(d => d.Answers,
+                           o => o.MapFrom(s => s.QuizSubmissionAnswers));
+
+            // 4) QuestionBank → QuizQuestionDTO
+            CreateMap<QuestionBank, QuizQuestionDTO>()
+                .ForMember(d => d.QuestionId, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.QuestionText, o => o.MapFrom(s => s.QuestionText));
+
+            // 5) QuestionOption → QuizOptionDTO
+            CreateMap<QuestionOption, QuizOptionDTO>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.OptionText, o => o.MapFrom(s => s.OptionText));
+
+
+            // Entity -> DTO
+            CreateMap<QuestionBank, QuestionDTO>()
+                .ForMember(d => d.QuestionText, o => o.MapFrom(s => s.QuestionText))
+                .ForMember(d => d.Level, o => o.MapFrom(s => s.Level))
+                .ForMember(d => d.Options, o => o.MapFrom(s => s.QuestionOptions));
+
+            CreateMap<QuestionOption, OptionDTO>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.OptionText, o => o.MapFrom(s => s.OptionText));
+
+            // CreateDTO -> Entity
+            CreateMap<CreateQuestionDTO, QuestionBank>();
+            CreateMap<CreateOptionDTO, QuestionOption>();
+
         }
     }
 }
