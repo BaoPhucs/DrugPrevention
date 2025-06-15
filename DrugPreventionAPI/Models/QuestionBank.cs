@@ -13,6 +13,8 @@ public partial class QuestionBank
 
     public DateTime? CreatedDate { get; set; }
 
+    public ICollection<CourseQuestion> CourseQuestions { get; set; }
+
     public ICollection<QuestionOption> QuestionOptions { get; set; } 
 
     public ICollection<QuizSubmissionAnswer> QuizSubmissionAnswers { get; set; } 

@@ -24,7 +24,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequest)
         {
             if (string.IsNullOrWhiteSpace(loginRequest.Email) || string.IsNullOrWhiteSpace(loginRequest.Password))
             {
@@ -53,7 +53,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("google-login")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest googleRequest)
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDTO googleRequest)
         {
             if (string.IsNullOrWhiteSpace(googleRequest.GoogleToken))
             {

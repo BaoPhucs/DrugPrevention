@@ -28,7 +28,9 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<Course> Courses { get; set; }
 
-    public virtual DbSet<CourseEnrollment> CourseEnrollments { get; set; }  
+    public virtual DbSet<CourseEnrollment> CourseEnrollments { get; set; }
+
+    public virtual DbSet<CourseQuestion> CourseQuestions { get; set; }
 
     public virtual DbSet<CourseMaterial> CourseMaterials { get; set; }
 
@@ -319,24 +321,24 @@ public partial class DataContext : DbContext
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_Course_Creator");
 
-            entity.HasMany(d => d.Questions).WithMany(p => p.Courses)
-                .UsingEntity<Dictionary<string, object>>(
-                    "CourseQuestion",
-                    r => r.HasOne<QuestionBank>().WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_CourseQuestion_Question"),
-                    l => l.HasOne<Course>().WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_CourseQuestion_Course"),
-                    j =>
-                    {
-                        j.HasKey("CourseId", "QuestionId");
-                        j.ToTable("CourseQuestion");
-                        j.IndexerProperty<int>("CourseId").HasColumnName("CourseID");
-                        j.IndexerProperty<int>("QuestionId").HasColumnName("QuestionID");
-                    });
+            //entity.HasMany(d => d.Questions).WithMany(p => p.Courses)
+            //    .UsingEntity<Dictionary<string, object>>(
+            //        "CourseQuestion",
+            //        r => r.HasOne<QuestionBank>().WithMany()
+            //            .HasForeignKey("QuestionId")
+            //            .OnDelete(DeleteBehavior.ClientSetNull)
+            //            .HasConstraintName("FK_CourseQuestion_Question"),
+            //        l => l.HasOne<Course>().WithMany()
+            //            .HasForeignKey("CourseId")
+            //            .OnDelete(DeleteBehavior.ClientSetNull)
+            //            .HasConstraintName("FK_CourseQuestion_Course"),
+            //        j =>
+            //        {
+            //            j.HasKey("CourseId", "QuestionId");
+            //            j.ToTable("CourseQuestion");
+            //            j.IndexerProperty<int>("CourseId").HasColumnName("CourseID");
+            //            j.IndexerProperty<int>("QuestionId").HasColumnName("QuestionID");
+            //        });
         });
 
 
@@ -360,6 +362,27 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.Member).WithMany(p => p.CourseEnrollments)
                 .HasForeignKey(d => d.MemberId)
                 .HasConstraintName("FK_CourseEnrollment_Member");
+        });
+
+        modelBuilder.Entity<CourseQuestion>(entity =>
+        {
+            entity.ToTable("CourseQuestion");
+            entity.HasKey(cq => new { cq.CourseId, cq.QuestionId });
+
+            entity.Property(cq => cq.CourseId)
+                  .HasColumnName("CourseID");
+            entity.Property(cq => cq.QuestionId)
+                  .HasColumnName("QuestionID");
+
+            entity.HasOne(cq => cq.Course)
+                  .WithMany(c => c.CourseQuestions)
+                  .HasForeignKey(cq => cq.CourseId)
+                  .HasConstraintName("FK_CourseQuestion_Course");
+
+            entity.HasOne(cq => cq.Question)
+                  .WithMany(q => q.CourseQuestions)
+                  .HasForeignKey(cq => cq.QuestionId)
+                  .HasConstraintName("FK_CourseQuestion_Question");
         });
 
         modelBuilder.Entity<CourseMaterial>(entity =>
@@ -514,6 +537,12 @@ public partial class DataContext : DbContext
                 .HasForeignKey(d => d.QuestionId)
                 .HasConstraintName("FK_QuestionOption_Question");
         });
+
+        modelBuilder.Entity<QuestionOption>()
+        .HasOne(o => o.Question)
+        .WithMany(q => q.QuestionOptions)
+        .HasForeignKey(o => o.QuestionId)
+        .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<QuizSubmission>(entity =>
         {

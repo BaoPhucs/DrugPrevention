@@ -39,6 +39,8 @@ public partial class Course
 
     public ICollection<CourseMaterial> CourseMaterials { get; set; }
 
+    public ICollection<CourseQuestion> CourseQuestions { get; set; }
+
     public User? CreatedBy { get; set; }
 
     public ICollection<QuizSubmission> QuizSubmissions { get; set; } 
