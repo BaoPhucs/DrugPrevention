@@ -20,7 +20,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("get-users")]
-        [Authorize(Roles = "Admin, Manager")]
+        [Authorize(Roles = "Admin, Manager")] // phân quyền cho API, cho roles
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _adminRepository.GetAllUserAsync();

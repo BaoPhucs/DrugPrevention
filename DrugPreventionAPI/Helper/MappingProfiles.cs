@@ -61,6 +61,24 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateQuestionDTO, QuestionBank>();
             CreateMap<CreateOptionDTO, QuestionOption>();
 
+            //Inquiry <-> InquiryAssignment
+            CreateMap<InquiryAssignment, InquiryAssignmentDTO>();
+            CreateMap<CreateInquiryAssignment, InquiryAssignment>()
+                .ForMember(d => d.AssignedDate,
+                           o => o.MapFrom(s => s.AssignedDate ?? DateTime.UtcNow));
+
+            CreateMap<InquiryComment, InquiryCommentDTO>();
+            CreateMap<CreateInquiryCommentDTO, InquiryComment>()
+                .ForMember(dest => dest.CreatedDate,
+                           opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+            CreateMap<UserInquiry, UserInquiryDTO>();
+            CreateMap<CreateUserInquiryDTO, UserInquiry>()
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
+            CreateMap<CreateUserInquiryDTO, UserInquiry>()
+                .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
         }
     }
 }
