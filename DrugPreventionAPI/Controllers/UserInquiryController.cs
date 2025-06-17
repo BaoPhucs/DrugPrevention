@@ -29,7 +29,7 @@ namespace DrugPreventionAPI.Controllers
         public async Task<IActionResult> Create(CreateUserInquiryDTO dto)
         {
             var iq = _mapper.Map<UserInquiry>(dto);
-            var userId = _http.HttpContext.User.FindFirst("id")?.Value;
+            var userId = _http.HttpContext.User.FindFirst("ID")?.Value;
             if (userId != null) iq.CreatedById = int.Parse(userId);
 
             var created = await _repo.AddAsync(iq);
@@ -42,7 +42,7 @@ namespace DrugPreventionAPI.Controllers
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> MyInquiries()
         {
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("id")!.Value);
+            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
             var list = await _repo.GetByUserAsync(userId);
             return Ok(_mapper.Map<IEnumerable<UserInquiryDTO>>(list));
         }
@@ -67,7 +67,7 @@ namespace DrugPreventionAPI.Controllers
             var iq = await _repo.GetByIdAsync(id);
             if (iq == null) return NotFound();
 
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("id")!.Value);
+            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
             var role = _http.HttpContext.User.FindFirst(ClaimTypes.Role)!.Value;
 
             if (role == "Member" && iq.CreatedById != userId)
@@ -89,7 +89,7 @@ namespace DrugPreventionAPI.Controllers
             var iq = await _repo.GetByIdAsync(id);
             if (iq == null) return NotFound();
 
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("id")!.Value);
+            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
             if (iq.CreatedById != userId)
                 return Forbid();
 
@@ -106,7 +106,7 @@ namespace DrugPreventionAPI.Controllers
             var iq = await _repo.GetByIdAsync(id);
             if (iq == null) return NotFound();
 
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("id")!.Value);
+            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
             var role = _http.HttpContext.User.FindFirst(ClaimTypes.Role)!.Value;
 
             if ((role == "Consultant" || role == "Staff" )

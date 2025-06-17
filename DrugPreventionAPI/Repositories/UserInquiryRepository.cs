@@ -1,54 +1,56 @@
 ﻿using DrugPreventionAPI.Data;
+using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DrugPreventionAPI.Repositories
 {
-    public class UserInquiryRepository
+    public class UserInquiryRepository : IUserInquiryRepository
     {
         private readonly DataContext _ctx;
-        public UserInquiryRepository(DataContext ctx) => _ctx = ctx;
 
-        public async Task<UserInquiry> AddAsync(UserInquiry iq)
+        public UserInquiryRepository(DataContext ctx)
         {
-            iq.CreatedDate = iq.LastUpdated = DateTime.UtcNow;
-            _ctx.UserInquiries.Add(iq);
+            _ctx = ctx;
+        }
+
+        public async Task<UserInquiry> AddAsync(UserInquiry inquiry)
+        {
+            await _ctx.UserInquiries.AddAsync(inquiry);
             await _ctx.SaveChangesAsync();
-            return iq;
+            return inquiry;
         }
 
         public async Task DeleteAsync(int id)
         {
-            var iq = await _ctx.UserInquiries.FindAsync(id);
-            if (iq != null)
+            var inquiry = await _ctx.UserInquiries.FindAsync(id);
+            if (inquiry != null)
             {
-                _ctx.UserInquiries.Remove(iq);
+                _ctx.UserInquiries.Remove(inquiry);
                 await _ctx.SaveChangesAsync();
             }
         }
 
         public async Task<IEnumerable<UserInquiry>> GetAllAsync()
-            => await _ctx.UserInquiries
-                         .Include(u => u.CreatedBy)
-                         .ToListAsync();
+        {
+            return await _ctx.UserInquiries.ToListAsync();
+        }
 
         public async Task<UserInquiry> GetByIdAsync(int id)
-            => await _ctx.UserInquiries
-                         .Include(u => u.CreatedBy)
-                         .FirstOrDefaultAsync(u => u.Id == id);
+        {
+            return await _ctx.UserInquiries.FindAsync(id);
+        }
 
         public async Task<IEnumerable<UserInquiry>> GetByUserAsync(int userId)
-            => await _ctx.UserInquiries
-                         .Where(u => u.CreatedById == userId)
-                         .Include(u => u.CreatedBy)
-                         .ToListAsync();
-
-        public async Task<UserInquiry> UpdateAsync(UserInquiry iq)
         {
-            iq.LastUpdated = DateTime.UtcNow;
-            _ctx.UserInquiries.Update(iq);
+            return await _ctx.UserInquiries.Where(i => i.Id == userId).ToListAsync();
+        }
+
+        public async Task<UserInquiry> UpdateAsync(UserInquiry inquiry)
+        {
+            _ctx.UserInquiries.Update(inquiry);
             await _ctx.SaveChangesAsync();
-            return iq;
+            return inquiry;
         }
     }
 }
