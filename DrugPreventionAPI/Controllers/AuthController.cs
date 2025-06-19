@@ -66,19 +66,17 @@ namespace DrugPreventionAPI.Controllers
                 return Unauthorized("Invalid Google token");
             }
 
-            // Tạo session cookie với vai trò từ DB
-            var role = user.Role ?? "user"; // Lấy vai trò từ DB
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, role)
+                new Claim(ClaimTypes.Role, user.Role ?? "Member")
             };
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return Ok(new { user.Id, user.Email, role }); // Trả về thông tin cơ bản
+            return Ok(new { user.Id, user.Email, Role = user.Role }); // Trả về thông tin cơ bản
         }
 
         [HttpPost("change-password")]

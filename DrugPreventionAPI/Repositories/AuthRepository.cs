@@ -32,39 +32,68 @@ namespace DrugPreventionAPI.Repositories
             return user; // Authentication successful
         }
 
-        public async Task<User> AuthenticateGoogleAsync(string googleToken)
+
+
+        public async Task<User?> AuthenticateGoogleAsync(string googleToken)
         {
             if (string.IsNullOrEmpty(googleToken))
             {
-                Console.WriteLine("Google token is null or empty"); // Debug
+                Console.WriteLine("Google token is null or empty");
                 return null;
             }
-            Console.WriteLine($"Received googleToken: {googleToken?.Substring(0, 50)}..."); // Debug
+
             try
             {
                 var clientId = _configuration["GoogleAuth:ClientId"];
-                Console.WriteLine($"Client ID: {clientId}"); // Debug
                 var payload = await GoogleJsonWebSignature.ValidateAsync(googleToken, new GoogleJsonWebSignature.ValidationSettings
                 {
                     Audience = new[] { clientId }
                 });
-                var email = payload.Email;
-                Console.WriteLine($"Validated email: {email}"); // Debug
-                var user = await _adminRepository.GetProfileAsync(email) ?? new User { Email = email, EmailVerified = true };
-                if (user.Id == 0) await _userManagementRepository.RegisterAsync(user);
+
+                // những trường bạn có thể lấy từ payload
+                var email = payload.Email!;
+                var fullName = payload.Name;         // họ tên đầy đủ
+
+                // tìm user theo email
+                var user = await _adminRepository.GetProfileAsync(email);
+
+                if (user == null)
+                {
+                    // tạo mới
+                    user = new User
+                    {
+                        Email = email,
+                        Name = fullName,
+                        Role = "Member",
+                        EmailVerified = true,
+                        CreatedDate = DateTime.UtcNow
+                    };
+                    await _userManagementRepository.RegisterAsync(user);
+                }
+                else
+                {
+                    // cập nhật các thông tin có thể thay đổi
+                    var updated = false;
+                    if (user.Name != fullName) { user.Name = fullName; updated = true; }
+                    if (user.EmailVerified != true) { user.EmailVerified = true; updated = true; }
+                    if (updated)
+                        await _userManagementRepository.UpdateAsync(user);
+                }
+
                 return user;
             }
             catch (InvalidJwtException ex)
             {
-                Console.WriteLine($"Invalid JWT: {ex.Message}"); // Debug
+                Console.WriteLine($"Invalid JWT: {ex.Message}");
                 return null;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}"); // Debug
+                Console.WriteLine($"Error validating Google token: {ex}");
                 return null;
             }
         }
+
 
         public async Task<bool> ChangePasswordAsync(string email, string oldPassword, string newPassword, string confirmPassword)
         {

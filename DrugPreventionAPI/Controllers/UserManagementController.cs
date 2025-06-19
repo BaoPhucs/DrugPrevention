@@ -62,7 +62,7 @@ namespace DrugPreventionAPI.Controllers
                 Email = registerDto.Email,
                 Password = registerDto.Password, // Lưu mật khẩu thô
                 AgeGroup = registerDto.AgeGroup, // Null nếu chưa có
-                Role = "member", // Giá trị mặc định từ model
+                Role = "Member", // Giá trị mặc định từ model
                 EmailVerified = true, // Giả sử đã xác minh
                 CreatedDate = DateTime.UtcNow
             };
