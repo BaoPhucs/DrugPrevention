@@ -38,18 +38,19 @@ namespace DrugPreventionAPI.Controllers
             }
 
             // Tạo session cookie với vai trò từ DB
-            var role = user.Role ?? "user".ToLower(); // Lấy vai trò từ DB, mặc định là "user"
+            var role = user.Role ?? "Member".ToLower(); // Lấy vai trò từ DB, mặc định là "user"
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, role)
+                new Claim(ClaimTypes.Role, role),
+                new Claim(ClaimTypes.Name, user.Name)
             };
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return Ok(new { user.Id, user.Email, role }); // Trả về thông tin cơ bản
+            return Ok(new { user.Id, user.Email, role, user.Name}); // Trả về thông tin cơ bản
         }
 
         [HttpPost("google-login")]
@@ -70,13 +71,14 @@ namespace DrugPreventionAPI.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? "Member")
+                new Claim(ClaimTypes.Role, user.Role ?? "Member"),
+                new Claim(ClaimTypes.Name, user.Name) 
             };
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return Ok(new { user.Id, user.Email, Role = user.Role }); // Trả về thông tin cơ bản
+            return Ok(new { user.Id, user.Email, Role = user.Role, user.Name }); // Trả về thông tin cơ bản
         }
 
         [HttpPost("change-password")]
