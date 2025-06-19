@@ -1,16 +1,18 @@
-﻿// Controllers/UserInquiryController.cs
+﻿using System.Linq;
 using System.Security.Claims;
 using AutoMapper;
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DrugPreventionAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]  // require a valid JWT for all actions by default
     public class UserInquiryController : ControllerBase
     {
         private readonly IUserInquiryRepository _repo;
@@ -23,31 +25,51 @@ namespace DrugPreventionAPI.Controllers
             IHttpContextAccessor http
         ) => (_repo, _mapper, _http) = (repo, mapper, http);
 
-        //–– Create a new inquiry –– Guests and Members
+
+        // debug endpoint to see exactly what claims you have
+        [HttpGet("claims")]
+        public IActionResult ListClaims()
+        {
+            var claims = User.Claims
+                             .Select(c => new { c.Type, c.Value })
+                             .ToList();
+            return Ok(claims);
+        }
+
+
+        // Guests & Members can create
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> Create(CreateUserInquiryDTO dto)
         {
             var iq = _mapper.Map<UserInquiry>(dto);
-            var userId = _http.HttpContext.User.FindFirst("ID")?.Value;
-            if (userId != null) iq.CreatedById = int.Parse(userId);
+
+            // stamp CreatedById from the NameIdentifier claim, if present
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(claim, out var userId))
+                iq.CreatedById = userId;
 
             var created = await _repo.AddAsync(iq);
             return CreatedAtAction(nameof(Get), new { id = created.Id },
                                    _mapper.Map<UserInquiryDTO>(created));
         }
 
-        //–– Members list their own inquiries
-        [HttpGet("my")]
+
+        // Members list their own
+        [HttpGet("myInquiries")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> MyInquiries()
         {
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(claim, out var userId))
+                return Unauthorized("User ID missing or invalid.");
+
             var list = await _repo.GetByUserAsync(userId);
             return Ok(_mapper.Map<IEnumerable<UserInquiryDTO>>(list));
         }
 
-        //–– Staff list all inquiries
+
+        // Staff list all
         [HttpGet]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetAll()
@@ -56,19 +78,19 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<IEnumerable<UserInquiryDTO>>(list));
         }
 
-        //–– Get by ID –– either:
-        //   • Staff (any),  
-        //   • Member (own),  
-        //   • Consultant/Manager/Admin (only if assigned)
+
+        // Get by ID (with Member/Consultant/Manager/Admin guards)
         [HttpGet("{id:int}")]
-        [Authorize]
         public async Task<IActionResult> Get(int id)
         {
             var iq = await _repo.GetByIdAsync(id);
             if (iq == null) return NotFound();
 
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
-            var role = _http.HttpContext.User.FindFirst(ClaimTypes.Role)!.Value;
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(claim, out var userId))
+                return Unauthorized("User ID missing or invalid.");
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
             if (role == "Member" && iq.CreatedById != userId)
                 return Forbid();
@@ -77,11 +99,11 @@ namespace DrugPreventionAPI.Controllers
                 && !iq.InquiryAssignments.Any(a => a.AssignedToId == userId))
                 return Forbid();
 
-            // Staff passes through
             return Ok(_mapper.Map<UserInquiryDTO>(iq));
         }
 
-        //–– Update –– only Members may update *their* inquiries
+
+        // Update – only Members may update their own
         [HttpPut("{id:int}")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> Update(int id, UpdateUserInquiryDTO dto)
@@ -89,8 +111,8 @@ namespace DrugPreventionAPI.Controllers
             var iq = await _repo.GetByIdAsync(id);
             if (iq == null) return NotFound();
 
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
-            if (iq.CreatedById != userId)
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(claim, out var userId) || iq.CreatedById != userId)
                 return Forbid();
 
             _mapper.Map(dto, iq);
@@ -98,7 +120,8 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<UserInquiryDTO>(updated));
         }
 
-        //–– Delete –– Staff,Consultant only if assigned; /Manager/Admin may delete any
+
+        // Delete – Consultant/Manager/Admin, with “assigned to” check for Consultants only
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "Consultant,Manager,Admin")]
         public async Task<IActionResult> Delete(int id)
@@ -106,10 +129,14 @@ namespace DrugPreventionAPI.Controllers
             var iq = await _repo.GetByIdAsync(id);
             if (iq == null) return NotFound();
 
-            var userId = int.Parse(_http.HttpContext.User.FindFirst("ID")!.Value);
-            var role = _http.HttpContext.User.FindFirst(ClaimTypes.Role)!.Value;
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(claim, out var userId))
+                return Unauthorized("User ID missing or invalid.");
 
-            if ((role == "Consultant" || role == "Staff" )
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            // Consultants may only delete if assigned
+            if (role == "Consultant"
                 && !iq.InquiryAssignments.Any(a => a.AssignedToId == userId))
                 return Forbid();
 

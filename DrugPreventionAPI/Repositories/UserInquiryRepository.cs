@@ -32,19 +32,28 @@ namespace DrugPreventionAPI.Repositories
         }
 
         public async Task<IEnumerable<UserInquiry>> GetAllAsync()
-        {
-            return await _ctx.UserInquiries.ToListAsync();
-        }
+         => await _ctx.UserInquiries
+        .Include(ui => ui.CreatedBy)
+        .ToListAsync();
 
         public async Task<UserInquiry> GetByIdAsync(int id)
         {
-            return await _ctx.UserInquiries.FindAsync(id);
+            return await _ctx.UserInquiries
+                  .Include(ui => ui.CreatedBy)           // ← load the User row
+                  .Include(ui => ui.InquiryComments)
+                  .Include(ui => ui.InquiryAssignments)
+                  .FirstOrDefaultAsync(ui => ui.Id == id);
         }
 
         public async Task<IEnumerable<UserInquiry>> GetByUserAsync(int userId)
-        {
-            return await _ctx.UserInquiries.Where(i => i.Id == userId).ToListAsync();
-        }
+        =>
+            await _ctx.UserInquiries
+                    .Where(ui => ui.CreatedById == userId)
+                    .Include(ui => ui.CreatedBy)
+                              .Include(ui => ui.CreatedById)
+
+                    .ToListAsync();
+
 
         public async Task<UserInquiry> UpdateAsync(UserInquiry inquiry)
         {
