@@ -61,32 +61,25 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateQuestionDTO, QuestionBank>();
             CreateMap<CreateOptionDTO, QuestionOption>();
 
+            //Inquiry <-> InquiryAssignment
+            CreateMap<InquiryAssignment, InquiryAssignmentDTO>();
+            CreateMap<CreateInquiryAssignment, InquiryAssignment>()
+                .ForMember(d => d.AssignedDate,
+                           o => o.MapFrom(s => s.AssignedDate ?? DateTime.UtcNow));
 
-            // Survey
-            CreateMap<Survey, SurveyDTO>();
-            CreateMap<CreateSurveyDTO, Survey>();
+            CreateMap<InquiryComment, InquiryCommentDTO>();
+            CreateMap<CreateInquiryCommentDTO, InquiryComment>()
+                .ForMember(dest => dest.CreatedDate,
+                           opt => opt.MapFrom(_ => DateTime.UtcNow));
 
-            // SurveyQuestion
-            CreateMap<SurveyQuestion, SurveyQuestionDTO>()
-                .ForMember(dest => dest.Options,
-                           opt => opt.MapFrom(src => src.SurveyOptions.OrderBy(o => o.Sequence)));
-            CreateMap<CreateSurveyQuestionDTO, SurveyQuestion>();
-
-            // SurveyOption
-            CreateMap<SurveyOption, SurveyOptionDTO>();
-            CreateMap<CreateSurveyOptionDTO, SurveyOption>();
-
-            // Submission
-            CreateMap<SurveySubmission, SurveySubmissionReadDTO>();
-            CreateMap<SurveySubmission, SurveySubmissionDetailDTO>()
-                .ForMember(d => d.Answers,
-                           o => o.MapFrom(src => src.SurveySubmissionAnswers
-                                                   .Select(a => new SurveyAnswerDTO
-                                                   {
-                                                       QuestionId = a.QuestionId,
-                                                       OptionId = a.OptionId
-                                                   })));
+            CreateMap<UserInquiry, UserInquiryDTO>();
+            CreateMap<CreateUserInquiryDTO, UserInquiry>()
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
+            CreateMap<CreateUserInquiryDTO, UserInquiry>()
+                .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
         }
     }
 }
+//trial commit
