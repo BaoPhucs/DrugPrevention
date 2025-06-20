@@ -47,7 +47,7 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(d => d.OptionText, o => o.MapFrom(s => s.OptionText));
 
 
-            // Entity -> DTO
+            //  Entity -> DTO
             CreateMap<QuestionBank, QuestionDTO>()
                 .ForMember(d => d.QuestionText, o => o.MapFrom(s => s.QuestionText))
                 .ForMember(d => d.Level, o => o.MapFrom(s => s.Level))
@@ -61,7 +61,7 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateQuestionDTO, QuestionBank>();
             CreateMap<CreateOptionDTO, QuestionOption>();
 
-            //Inquiry <-> InquiryAssignment
+            //6. Inquiry <-> InquiryAssignment
             CreateMap<InquiryAssignment, InquiryAssignmentDTO>();
             CreateMap<CreateInquiryAssignment, InquiryAssignment>()
                 .ForMember(d => d.AssignedDate,
@@ -78,6 +78,27 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
             CreateMap<CreateUserInquiryDTO, UserInquiry>()
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+            //7. Tag, TagDTO, BlogPost - DTO
+            // Tag
+            CreateMap<Tag, TagDTO>();
+            CreateMap<CreateTagDTO, Tag>();
+
+            // BlogPost → DTO
+            CreateMap<BlogPost, BlogPostDTO>()
+                .ForMember(d => d.Tags,
+                           o => o.MapFrom(s => s.BlogTags.Select(bt => bt.Tag)));
+
+            // DTO → BlogPost
+            CreateMap<CreateBlogPostDTO, BlogPost>()
+                .ForMember(d => d.BlogTags, opt => opt.Ignore())
+                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(d => d.UpdatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+            CreateMap<UpdateBlogPostDTO, BlogPost>()
+                .ForMember(d => d.BlogTags, opt => opt.Ignore())
+                .ForMember(d => d.UpdatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
 
         }
     }

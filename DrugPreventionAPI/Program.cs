@@ -14,6 +14,9 @@ namespace DrugPreventionAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
+             builder.Services.AddScoped<ITagRepo, TagRepo>();
+             builder.Services.AddScoped<IBlogPostRepo, BlogPostRepo>();
+
             // Add services to the container.
             builder.Services.AddScoped<IInquiryAssignmentRepository, InquiryAssignmentRepository>();
             builder.Services.AddScoped<IInquiryCommentRepository, InquiryCommentRepository>();
