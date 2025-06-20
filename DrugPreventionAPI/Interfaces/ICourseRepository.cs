@@ -9,6 +9,8 @@ namespace DrugPreventionAPI.Interfaces
         Task<Course> GetCourseByIdAsync(int id); // Retrieves a course by its ID
         Task<IEnumerable<Course>> GetCoursesByCategoryAsync(string category); // Retrieves courses by category
         Task<IEnumerable<Course>> GetCourseByLevelAsync(string level); // Retrieves a course by its title
+        Task<IEnumerable<Course>> GetCoursesByCreatedByIdAsync(int createById); // Retrieves courses by title
+        Task<IEnumerable<Course>> GetCoursesByStatusAsync(string status); // Retrieves courses by title
 
         //CRUD
         Task<bool> CreateCourseAsync(Course course); // Adds a new course

@@ -17,5 +17,7 @@
         public int? Duration { get; set; }
 
         public int? PassingScore { get; set; }
+
+        public string? Status { get; set; }
     }
 }

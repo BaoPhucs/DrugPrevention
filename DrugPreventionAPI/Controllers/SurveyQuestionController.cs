@@ -20,7 +20,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("get-all")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> GetAll(int surveyId)
         {
             var list = await _surveyQuestionRepository.GetBySurveyAsync(surveyId);
@@ -28,7 +28,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("create-question")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> Create(int surveyId, [FromBody] CreateSurveyQuestionDTO dto)
         {
             dto.SurveyId = surveyId;
@@ -39,7 +39,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPut("update-question/{questionId:int}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff  ")]
         public async Task<IActionResult> Update(int surveyId, int questionId, [FromBody] CreateSurveyQuestionDTO dto)
         {
             var q = await _surveyQuestionRepository.GetQuestionByIdAsync(questionId);
@@ -50,7 +50,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpDelete("delete-question/{questionId:int}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> Delete(int surveyId, int questionId)
         {
             var q = await _surveyQuestionRepository.GetQuestionByIdAsync(questionId);
@@ -62,7 +62,7 @@ namespace DrugPreventionAPI.Controllers
 
         // --- SurveyOption ---
         [HttpGet("{questionId:int}/get-options")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> GetOptions(int surveyId, int questionId)
         {
             var options = await _surveyQuestionRepository.GetOptionsAsync(questionId);
@@ -70,7 +70,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("{questionId:int}/add-options")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> AddOption(int surveyId, int questionId, [FromBody] IEnumerable<CreateSurveyOptionDTO> dtos)
         {
             if (dtos == null || !dtos.Any())
@@ -92,7 +92,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPut("{questionId:int}/update-option/{optionId:int}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> UpdateOption(int surveyId, int questionId, int optionId, [FromBody] CreateSurveyOptionDTO dto)
         {
             var option = await _surveyQuestionRepository.GetOptionByIdAsync(optionId);
@@ -103,7 +103,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpDelete("{questionId:int}/delete-option/{optionId:int}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> DeleteOption(int surveyId, int questionId, int optionId)
         {
             var option = await _surveyQuestionRepository.GetOptionByIdAsync(optionId);

@@ -79,6 +79,34 @@ namespace DrugPreventionAPI.Controllers
             return Ok(courseDtos);
         }
 
+        [HttpGet("get-courses-by-createById/{createById}")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
+        public async Task<IActionResult> GetCoursesByCreateById(int createById)
+        {
+            var courses = await _courseRepository.GetCoursesByCreatedByIdAsync(createById);
+            if (courses == null || !courses.Any())
+            {
+                return NotFound($"No courses found created by user with ID {createById}");
+            }
+            // Map the courses to CourseDTOs
+            var courseDtos = _mapper.Map<IEnumerable<CourseDTO>>(courses);
+            return Ok(courseDtos);
+        }
+
+        [HttpGet("get-courses-by-status/{status}")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
+        public async Task<IActionResult> GetCoursesByStatus(string status)
+        {
+            var courses = await _courseRepository.GetCoursesByStatusAsync(status);
+            if (courses == null || !courses.Any())
+            {
+                return NotFound($"No courses found with status {status}");
+            }
+            // Map the courses to CourseDTOs
+            var courseDtos = _mapper.Map<IEnumerable<CourseDTO>>(courses);
+            return Ok(courseDtos);
+        }
+
         [HttpPost("create-course")]
         [Authorize(Roles = "Consultant")]
         public async Task<IActionResult> CreateCourse([FromBody] CourseDTO courseDto)

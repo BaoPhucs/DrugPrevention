@@ -18,6 +18,8 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<BlogPost> BlogPosts { get; set; }
 
+    public virtual DbSet<BlogTag> BlogTags { get; set; }
+
     public virtual DbSet<Comment> Comments { get; set; }
 
     public virtual DbSet<CommunicationActivity> CommunicationActivities { get; set; }
@@ -172,6 +174,28 @@ public partial class DataContext : DbContext
                         j.IndexerProperty<int>("BlogPostId").HasColumnName("BlogPostID");
                         j.IndexerProperty<int>("TagId").HasColumnName("TagID");
                     });
+        });
+
+        modelBuilder.Entity<BlogTag>(entity =>
+        {
+            entity.ToTable("BlogTag");
+
+            // Khóa chính phức hợp
+            entity.HasKey(bt => new { bt.BlogPostId, bt.TagId });
+
+            // FK → BlogPost
+            entity.HasOne(bt => bt.BlogPost)
+                  .WithMany(b => b.BlogTags)
+                  .HasForeignKey(bt => bt.BlogPostId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_BlogTag_Post");
+
+            // FK → Tag
+            entity.HasOne(bt => bt.Tag)
+                  .WithMany(t => t.BlogTags)
+                  .HasForeignKey(bt => bt.TagId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_BlogTag_Tag");
         });
 
         modelBuilder.Entity<Comment>(entity =>

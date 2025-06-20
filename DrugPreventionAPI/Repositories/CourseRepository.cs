@@ -99,5 +99,19 @@ namespace DrugPreventionAPI.Repositories
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
 
         }
+
+        public async Task<IEnumerable<Course>> GetCoursesByCreatedByIdAsync(int createById)
+        {
+            return await _context.Courses
+                .Where(c => c.CreatedById == createById)
+                .ToListAsync(); // Retrieves courses created by a specific user
+        }
+
+        public async Task<IEnumerable<Course>> GetCoursesByStatusAsync(string status)
+        {
+            return await _context.Courses
+                .Where(c => c.Status != null && c.Status.ToLower() == status.ToLower())
+                .ToListAsync(); // Retrieves courses by their status
+        }
     }
 }

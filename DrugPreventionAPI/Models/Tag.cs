@@ -9,5 +9,7 @@ public partial class Tag
 
     public string? Name { get; set; }
 
-    public ICollection<BlogPost> BlogPosts { get; set; } 
+    public ICollection<BlogPost> BlogPosts { get; set; }
+
+    public ICollection<BlogTag> BlogTags { get; set; }
 }

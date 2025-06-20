@@ -38,7 +38,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> GetBySurvey(int surveyId)
         {
             var submissions = await _surveySubmissionRepository.GetBySurveyAsync(surveyId);

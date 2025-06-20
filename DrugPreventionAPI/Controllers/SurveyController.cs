@@ -20,7 +20,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("get-all-survey-questions")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> GetAllSurveyQuestions()
         {
             var questions = await _surveyRepository.GetAllAsync();
@@ -32,7 +32,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> Get(int id)
         {
             var s = await _surveyRepository.GetByIdAsync(id);
@@ -41,7 +41,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("create-survey")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff  ")]
         public async Task<IActionResult> CreateSurvey([FromBody] CreateSurveyDTO surveyDto)
         {
             var entity = _mapper.Map<Survey>(surveyDto);
@@ -51,7 +51,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPut("update-survey/{id:int}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> UpdateSurvey(int id, [FromBody] CreateSurveyDTO surveyDto)
         {
             var existing = await _surveyRepository.GetByIdAsync(id);
@@ -63,7 +63,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpDelete("delete-survey/{id:int}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> DeleteSurvey(int id)
         {
             if (!await _surveyRepository.DeleteAsync(id)) return NotFound();
