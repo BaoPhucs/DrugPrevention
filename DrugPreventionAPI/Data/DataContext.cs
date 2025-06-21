@@ -156,36 +156,35 @@ public partial class DataContext : DbContext
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_BlogPost_Author");
 
-            entity.HasMany(d => d.Tags).WithMany(p => p.BlogPosts)
-                .UsingEntity<Dictionary<string, object>>(
-                    "BlogTag",
-                    r => r.HasOne<Tag>().WithMany()
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_BlogTag_Tag"),
-                    l => l.HasOne<BlogPost>().WithMany()
-                        .HasForeignKey("BlogPostId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_BlogTag_Post"),
-                    j =>
-                    {
-                        j.HasKey("BlogPostId", "TagId");
-                        j.ToTable("BlogTag");
-                        j.IndexerProperty<int>("BlogPostId").HasColumnName("BlogPostID");
-                        j.IndexerProperty<int>("TagId").HasColumnName("TagID");
-                    });
+            //entity.HasMany(d => d.Tags).WithMany(p => p.BlogPosts)
+            //    .UsingEntity<Dictionary<string, object>>(
+            //        "BlogTag",
+            //        r => r.HasOne<Tag>().WithMany()
+            //            .HasForeignKey("TagId")
+            //            .OnDelete(DeleteBehavior.ClientSetNull)
+            //            .HasConstraintName("FK_BlogTag_Tag"),
+            //        l => l.HasOne<BlogPost>().WithMany()
+            //            .HasForeignKey("BlogPostId")
+            //            .OnDelete(DeleteBehavior.ClientSetNull)
+            //            .HasConstraintName("FK_BlogTag_Post"),
+            //        j =>
+            //        {
+            //            j.HasKey("BlogPostId", "TagId");
+            //            j.ToTable("BlogTag");
+            //            j.IndexerProperty<int>("BlogPostId").HasColumnName("BlogPostID");
+            //            j.IndexerProperty<int>("TagId").HasColumnName("TagID");
+            //        });
         });
 
         modelBuilder.Entity<BlogTag>(entity =>
         {
             entity.ToTable("BlogTag");
-
-            // Khóa chính phức hợp
+            // composite PK
             entity.HasKey(bt => new { bt.BlogPostId, bt.TagId });
 
             // FK → BlogPost
             entity.HasOne(bt => bt.BlogPost)
-                  .WithMany(b => b.BlogTags)
+                  .WithMany(bp => bp.BlogTags)
                   .HasForeignKey(bt => bt.BlogPostId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_BlogTag_Post");
