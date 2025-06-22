@@ -2,6 +2,7 @@
 {
     public class CourseEnrollmentDTO
     {
+        public int Id { get; set; }
         public int CourseId { get; set; }
         public int MemberId { get; set; }
         public DateTime ParticipationDate { get; set; }

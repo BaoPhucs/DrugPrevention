@@ -61,6 +61,7 @@ namespace DrugPreventionAPI.Repositories
                 return false; // Course not found
             }
             course.Result.Status = "Approved"; // Set the course status to Approved
+            course.Result.WorkflowState = "Approved"; // Update the workflow state to Approved
             _context.Courses.Update(course.Result); // Update the course in the context
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
         }
@@ -74,6 +75,7 @@ namespace DrugPreventionAPI.Repositories
                 return false; // Course not found
             }
             course.Result.Status = "Rejected"; // Set the course status to Rejected
+            course.Result.WorkflowState = "Rejected"; // Update the workflow state to Rejected
             course.Result.ReviewComments = comments; // Store rejection comments
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
         }
@@ -112,6 +114,32 @@ namespace DrugPreventionAPI.Repositories
             return await _context.Courses
                 .Where(c => c.Status != null && c.Status.ToLower() == status.ToLower())
                 .ToListAsync(); // Retrieves courses by their status
+        }
+
+        public async Task<bool> SubmitToStaffAsync(int courseId, int userId)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null || course.WorkflowState != "Draft")
+                return false;
+
+            course.WorkflowState = "SubmittedToStaff";
+            course.UpdateById = userId;
+            course.UpdateDate = DateTime.UtcNow;
+
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> SubmitToManagerAsync(int courseId, int userId)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null || course.WorkflowState != "SubmittedToStaff")
+                return false;
+
+            course.WorkflowState = "SubmittedToManager";
+            course.UpdateById = userId;
+            course.UpdateDate = DateTime.UtcNow;
+
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

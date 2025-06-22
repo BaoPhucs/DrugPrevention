@@ -335,6 +335,10 @@ public partial class DataContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Pending");
+            entity.Property(e => e.WorkflowState)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasDefaultValue("Draft");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);

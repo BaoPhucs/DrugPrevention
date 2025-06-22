@@ -25,6 +25,8 @@ public partial class Course
 
     public string? Status { get; set; } = "Pending";
 
+    public string? WorkflowState { get; set; } = "Draft";
+
     public int? CreatedById { get; set; }
 
     public DateTime? CreatedDate { get; set; }

@@ -2,6 +2,8 @@
 {
     public class CourseDTO
     {
+        public int Id { get; set; }
+
         public string? Title { get; set; }
 
         public string? Image { get; set; }
@@ -19,5 +21,7 @@
         public int? PassingScore { get; set; }
 
         public string? Status { get; set; }
+
+        public string? WorkflowState { get; set; }
     }
 }
