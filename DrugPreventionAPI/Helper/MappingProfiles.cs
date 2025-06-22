@@ -104,6 +104,10 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateUserInquiryDTO, UserInquiry>()
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
+
+
+            CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();
+
         }
     }
 }
