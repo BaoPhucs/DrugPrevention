@@ -26,4 +26,6 @@ public partial class CommunicationActivity
     public ICollection<ActivityParticipation> ActivityParticipations { get; set; } 
 
     public User? CreatedBy { get; set; }
+
+    public ICollection<Comment> Comments { get; set; }
 }

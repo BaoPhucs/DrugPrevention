@@ -23,5 +23,7 @@ public partial class BlogPost
 
     public ICollection<Tag> Tags { get; set; }
 
-    public ICollection<BlogTag> BlogTags { get; set; } 
+    public ICollection<BlogTag> BlogTags { get; set; }
+
+    public ICollection<Comment> Comments { get; set; }
 }

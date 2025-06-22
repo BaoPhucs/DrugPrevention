@@ -76,8 +76,8 @@ namespace DrugPreventionAPI.Controllers
             {
                 return NotFound($"Submission with ID {submissionId} not found for survey {surveyId}");
             }
-            var dto = _mapper.Map<SurveySubmissionReadDTO>(submission);
-            return Ok(dto);
+            var dto = _mapper.Map<SurveySubmissionDetailDTO>(submission);
+            return Ok(dto); 
         }
     }
 }

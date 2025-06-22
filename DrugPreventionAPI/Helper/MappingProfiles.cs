@@ -61,6 +61,31 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateQuestionDTO, QuestionBank>();
             CreateMap<CreateOptionDTO, QuestionOption>();
 
+            // SurveyAdd commentMore actions
+            CreateMap<Survey, SurveyDTO>();
+            CreateMap<CreateSurveyDTO, Survey>();
+
+            // SurveyQuestion
+            CreateMap<SurveyQuestion, SurveyQuestionDTO>()
+                .ForMember(dest => dest.Options,
+                           opt => opt.MapFrom(src => src.SurveyOptions.OrderBy(o => o.Sequence)));
+            CreateMap<CreateSurveyQuestionDTO, SurveyQuestion>();
+
+            // SurveyOption
+            CreateMap<SurveyOption, SurveyOptionDTO>();
+            CreateMap<CreateSurveyOptionDTO, SurveyOption>();
+
+            // Submission
+            CreateMap<SurveySubmission, SurveySubmissionReadDTO>();
+            CreateMap<SurveySubmission, SurveySubmissionDetailDTO>()
+                .ForMember(d => d.Answers,
+                           o => o.MapFrom(src => src.SurveySubmissionAnswers
+                                                   .Select(a => new SurveyAnswerDTO
+                                                   {
+                                                       QuestionId = a.QuestionId,
+                                                       OptionId = a.OptionId
+                                                   })));
+
             //Inquiry <-> InquiryAssignment
             CreateMap<InquiryAssignment, InquiryAssignmentDTO>();
             CreateMap<CreateInquiryAssignment, InquiryAssignment>()
