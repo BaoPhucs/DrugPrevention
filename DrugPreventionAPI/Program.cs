@@ -5,6 +5,7 @@ using DrugPreventionAPI.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using DrugPreventionAPI.Models;
 
 namespace DrugPreventionAPI
 {
@@ -37,6 +38,8 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IAppointmentRequestRepository, AppointmentRequestRepository>();
             builder.Services.AddScoped<IConsultantScheduleRepository, ConsultantScheduleRepository>();
             builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddTransient<IEmailService, EmailService>();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

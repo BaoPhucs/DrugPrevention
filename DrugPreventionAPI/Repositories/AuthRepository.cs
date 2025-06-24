@@ -68,7 +68,7 @@ namespace DrugPreventionAPI.Repositories
                         EmailVerified = true,
                         CreatedDate = DateTime.UtcNow
                     };
-                    await _userManagementRepository.RegisterAsync(user);
+                    await RegisterAsync(user);
                 }
                 else
                 {
@@ -94,6 +94,12 @@ namespace DrugPreventionAPI.Repositories
             }
         }
 
+
+        public async Task<bool> RegisterAsync(User user)
+        {
+            _context.Users.Add(user);
+            return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
+        }
 
         public async Task<bool> ChangePasswordAsync(string email, string oldPassword, string newPassword, string confirmPassword)
         {
@@ -128,12 +134,55 @@ namespace DrugPreventionAPI.Repositories
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
         }
 
-        private string GenerateRandomPassword(int length)
+        public string GenerateRandomPassword(int length)
         {
             const string validChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             Random random = new Random();
             return new string(Enumerable.Repeat(validChars, length)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        public async Task<bool> UpdatePasswordAsync(string email, string newPassword)
+        {
+            // Tìm user theo email
+            var user = await _context.Users
+                                     .FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+                return false;
+
+            // Gán password mới (lưu ý: ở production bạn nên hash!)
+            user.Password = newPassword;
+
+            // Lưu thay đổi
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<string> GenerateEmailVerificationTokenAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null) throw new KeyNotFoundException("User not found");
+
+            var token = Guid.NewGuid().ToString("N");
+            user.EmailVerificationToken = token;
+            user.EmailVerificationExpiry = DateTime.UtcNow.AddHours(24);  // token còn hiệu lực 24h
+
+            await _context.SaveChangesAsync();
+            return token;
+        }
+
+        public async Task<bool> ConfirmEmailAsync(string token)
+        {
+            var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.EmailVerificationToken == token);
+            if (user == null
+             || user.EmailVerificationExpiry < DateTime.UtcNow)
+                return false;
+
+            user.EmailVerified = true;
+            user.EmailVerificationToken = null;
+            user.EmailVerificationExpiry = null;
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

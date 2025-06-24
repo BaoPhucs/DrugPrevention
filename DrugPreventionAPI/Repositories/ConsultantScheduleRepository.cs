@@ -36,6 +36,13 @@ namespace DrugPreventionAPI.Repositories
                      .ToListAsync();
         }
 
+        public async Task<IEnumerable<ConsultantSchedule>> GetByIsAvailabilityAsync(bool isAvailable)
+        {
+            return await _context.ConsultantSchedules
+                     .Where(s => s.IsAvailable == isAvailable)
+                     .ToListAsync();
+        }
+
         public async Task<bool> UpdateAsync(ConsultantSchedule slot)
         {
             var existing = await _context.ConsultantSchedules.FindAsync(slot.Id);

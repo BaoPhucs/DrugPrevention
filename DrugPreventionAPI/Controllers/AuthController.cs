@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
+using DrugPreventionAPI.Models;
+using DrugPreventionAPI.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -16,11 +19,16 @@ namespace DrugPreventionAPI.Controllers
     {
         private readonly IAuthRepository _authRepository;
         private readonly IMapper _mapper;
-
-        public AuthController(IAuthRepository authRepository, IMapper mapper)
+        private readonly IEmailService _emailService;
+        private readonly IUserManagementRepository _userRepository;
+        private readonly IAdminRepository _adminRepository;
+        public AuthController(IAuthRepository authRepository, IMapper mapper, IEmailService emailService, IAdminRepository adminRepository, IUserManagementRepository userRepository)
         {
             _authRepository = authRepository;
             _mapper = mapper;
+            _emailService = emailService;
+            _adminRepository = adminRepository;
+            _userRepository = userRepository;
         }
 
         [HttpPost("login")]
@@ -81,6 +89,83 @@ namespace DrugPreventionAPI.Controllers
             return Ok(new { user.Id, user.Email, Role = user.Role, user.Name }); // Trả về thông tin cơ bản
         }
 
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterUserDTO registerDto)
+        {
+            if (string.IsNullOrWhiteSpace(registerDto.Email) || string.IsNullOrWhiteSpace(registerDto.Password) ||
+                string.IsNullOrWhiteSpace(registerDto.Name) || registerDto.Dob == null)
+            {
+                return BadRequest("All required fields (email, password, name, dob) must be provided");
+            }
+
+            // Kiểm tra định dạng email
+            if (!new EmailAddressAttribute().IsValid(registerDto.Email))
+            {
+                return BadRequest("Invalid email format");
+            }
+
+            // Kiểm tra độ dài mật khẩu
+            if (registerDto.Password.Length < 6)
+            {
+                return BadRequest("Password must be at least 6 characters long");
+            }
+
+            // Kiểm tra email đã tồn tại
+            if (await _adminRepository.UserExistAsync(registerDto.Email))
+            {
+                return BadRequest("Email already exists");
+            }
+
+            // Tạo và ánh xạ thủ công sang User
+            var user = new User
+            {
+                Name = registerDto.Name,
+                Dob = registerDto.Dob,
+                Phone = registerDto.Phone, // Null nếu chưa có
+                Email = registerDto.Email,
+                Password = registerDto.Password, // Lưu mật khẩu thô
+                AgeGroup = registerDto.AgeGroup, // Null nếu chưa có
+                Role = "Member", // Giá trị mặc định từ model
+                EmailVerified = false, // Giả sử đã xác minh
+                CreatedDate = DateTime.UtcNow
+            };
+
+            if (!await _authRepository.RegisterAsync(user))
+                return StatusCode(500, "Error registering user");
+
+            // Sinh token xác thực và lưu (cần cài thêm method trong IAuthRepository)
+            var token = await _authRepository.GenerateEmailVerificationTokenAsync(user.Email);
+
+            // Gửi email xác thực
+            var confirmUrl = $"{Request.Scheme}://{Request.Host}/api/auth/confirm-email?token={token}";
+            var html = $@"
+                <p>Hello {user.Name},</p>
+                <p>Please click <a href=""{confirmUrl}"">here</a> to verify your email.</p>
+                <p>This link is valid for 24 hours.</p>";
+
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "DrugPrevention Email Authentication",
+                html
+            );
+
+            return Accepted(new { Message = "Please check your email for verification." });
+        }
+
+        [HttpGet("confirm-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest("Invalid token.");
+
+            var ok = await _authRepository.ConfirmEmailAsync(token);
+            if (!ok) return BadRequest("The authentication link is invalid or has expired.");
+
+            return Ok("Email verification successful! You can log in now.");
+        }
+
         [HttpPost("change-password")]
         [Authorize] // Yêu cầu người dùng đã đăng nhập
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO changePasswordDTO)
@@ -117,19 +202,21 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("reset-password")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetPasswordDTO)
         {
-            if (string.IsNullOrWhiteSpace(resetPasswordDTO.Email))
-            {
-                return BadRequest("Email must be provided");
-            }
+            // 1) Sinh mật khẩu mới
+            var newPwd = _authRepository.GenerateRandomPassword(8);
+            var updated = await _authRepository.UpdatePasswordAsync(resetPasswordDTO.Email, newPwd);
+            if (!updated) return NotFound("Email does not exist");
 
-            var result = await _authRepository.ResetPasswordAsync(resetPasswordDTO.Email);
-            if (!result)
-            {
-                return NotFound($"User with email {resetPasswordDTO.Email} not found");
-            }
+            // 2) Gửi email cho user
+            var html = $"<p>Hello,</p>"
+                     + $"<p>Your new password is: <strong>{newPwd}</strong></p>"
+                     + "<p>Please login and change your password now.</p>";
+            await _emailService.SendEmailAsync(resetPasswordDTO.Email,
+                                              "Reset pasword DrugPrevention",
+                                              html);
 
             return Ok("Password reset link sent to your email"); // Trả về thông báo thành công
         }

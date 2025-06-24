@@ -14,8 +14,20 @@ namespace DrugPreventionAPI.Repositories
         }
         public async Task<AppointmentRequest> CreateAsync(AppointmentRequest req)
         {
+            // 1) Thêm request
             _context.AppointmentRequests.Add(req);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // để đảm bảo req.Id và req.ScheduleId có giá trị
+
+            // 2) Khóa slot đã được đặt
+            var slot = await _context.ConsultantSchedules
+                .FirstOrDefaultAsync(s => s.Id == req.ScheduleId);
+            if (slot != null)
+            {
+                slot.IsAvailable = false;
+                _context.ConsultantSchedules.Update(slot);
+                await _context.SaveChangesAsync();
+            }
+
             return req;
         }
 
