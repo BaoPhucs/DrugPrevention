@@ -25,6 +25,10 @@ public partial class User
 
     public bool? EmailVerified { get; set; }
 
+    public string? EmailVerificationToken { get; set; }
+
+    public DateTime? EmailVerificationExpiry { get; set; }
+
     public DateTime? CreatedDate { get; set; }
 
     public ICollection<ActivityParticipation> ActivityParticipations { get; set; } 

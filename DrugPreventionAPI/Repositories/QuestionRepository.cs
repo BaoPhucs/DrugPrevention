@@ -28,11 +28,69 @@ namespace DrugPreventionAPI.Repositories
             .FirstOrDefaultAsync(q => q.Id == id);
         }
 
-        public async Task<bool> CreateAsync(QuestionBank q)
+        //public async Task<bool> CreateAsync(QuestionBank q)
+        //{
+        //    _context.QuestionBanks.Add(q);
+        //    return await _context.SaveChangesAsync() > 0;
+        //}
+
+
+        public async Task<QuestionBank> CreateAsync(QuestionBank question)
         {
-            _context.QuestionBanks.Add(q);
-            return await _context.SaveChangesAsync() > 0;
+            // 1) Thêm câu hỏi vào QuestionBank
+            await _context.QuestionBanks.AddAsync(question);
+            await _context.SaveChangesAsync(); // để question.Id được gán
+
+            // 2) Lấy tất cả khóa học cùng level
+            var courses = await _context.Courses
+                .Where(c => c.Level == question.Level)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            // 3) Tạo bản ghi trung gian CourseQuestion cho mỗi course
+            foreach (var courseId in courses)
+            {
+                _context.CourseQuestions.Add(new CourseQuestion
+                {
+                    CourseId = courseId,
+                    QuestionId = question.Id
+                });
+            }
+            await _context.SaveChangesAsync();
+
+            return question;
         }
+
+        public async Task<IEnumerable<QuestionBank>> CreateRangeAsync(IEnumerable<QuestionBank> questions)
+        {
+            // Tạo tất cả QuestionBank trước
+            await _context.QuestionBanks.AddRangeAsync(questions);
+            await _context.SaveChangesAsync();
+
+            // Lấy danh sách id và levels vừa tạo
+            var created = questions.ToList();
+            // Lấy toàn bộ các khóa học
+            var allCourses = await _context.Courses.ToListAsync();
+
+            foreach (var q in created)
+            {
+                var matched = allCourses
+                    .Where(c => c.Level == q.Level)
+                    .Select(c => c.Id);
+                foreach (var courseId in matched)
+                {
+                    _context.CourseQuestions.Add(new CourseQuestion
+                    {
+                        CourseId = courseId,
+                        QuestionId = q.Id
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+            return created;
+        }
+
+
 
         public async Task<bool> UpdateAsync(QuestionBank q)
         {

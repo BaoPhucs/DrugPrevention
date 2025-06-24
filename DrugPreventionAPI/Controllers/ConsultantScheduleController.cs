@@ -30,6 +30,14 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<IEnumerable<ConsultantScheduleDTO>>(list));
         }
 
+        [HttpGet("availability/{isAvailable:bool}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByAvailability(bool isAvailable)
+        {
+            var list = await _consultantScheduleRepository.GetByIsAvailabilityAsync(isAvailable);
+            return Ok(_mapper.Map<IEnumerable<ConsultantScheduleDTO>>(list));
+        }
+
         [HttpPost("add-schedule")]
         [Authorize(Roles = "Consultant")]
         public async Task<IActionResult> Create([FromBody] CreateConsultantScheduleDTO dto)

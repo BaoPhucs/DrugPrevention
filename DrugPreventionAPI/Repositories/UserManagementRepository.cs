@@ -27,12 +27,6 @@ namespace DrugPreventionAPI.Repositories
             return await GetByIdAsync(currentUserId);
         }
 
-        public async Task<bool> RegisterAsync(User user)
-        {
-            _context.Users.Add(user);
-            return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
-        }
-
         public async Task<bool> UpdateAsync(User user)
         {
             _context.Users.Update(user);

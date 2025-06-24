@@ -35,7 +35,9 @@ namespace DrugPreventionAPI.Controllers
                 Status = "Pending"
             };
             var created = await _appointmentRequestRepository.CreateAsync(req);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            // Map sang DTO để không include navigation
+            var resultDto = _mapper.Map<AppointmentRequestDTO>(created);
+            return CreatedAtAction(nameof(GetById), new { id = resultDto.Id }, resultDto);
         }
 
         [HttpGet("users/{memberId:int}")]

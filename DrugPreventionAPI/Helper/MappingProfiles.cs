@@ -26,7 +26,8 @@ namespace DrugPreventionAPI.Helper
             CreateMap<QuizSubmissionAnswer, QuizAnswerDTO>()
                 // QuizSubmissionAnswer.QuestionId là int? nên phải null-coalesce
                 .ForMember(d => d.QuestionId, o => o.MapFrom(s => s.QuestionId ?? 0))
-                .ForMember(d => d.OptionId, o => o.MapFrom(s => s.OptionId ?? 0));
+                .ForMember(d => d.OptionId, o => o.MapFrom(s => s.OptionId ?? 0))
+                .ForMember(d => d.ScoreValue, o => o.MapFrom(src => src.Option.ScoreValue));
 
             // 2) QuizSubmission → QuizSubmissionReadDTO
             CreateMap<QuizSubmission, QuizSubmissionReadDTO>();
@@ -107,6 +108,7 @@ namespace DrugPreventionAPI.Helper
 
 
             CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();
+            CreateMap<AppointmentRequest, AppointmentRequestDTO>();
 
         }
     }

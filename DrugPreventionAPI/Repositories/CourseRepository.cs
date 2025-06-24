@@ -75,7 +75,7 @@ namespace DrugPreventionAPI.Repositories
                 return false; // Course not found
             }
             course.Result.Status = "Rejected"; // Set the course status to Rejected
-            course.Result.WorkflowState = "Rejected"; // Update the workflow state to Rejected
+            course.Result.WorkflowState = "Draft"; // Update the workflow state to Rejected
             course.Result.ReviewComments = comments; // Store rejection comments
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
         }
