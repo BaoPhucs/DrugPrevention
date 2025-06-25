@@ -1,4 +1,5 @@
-﻿using DrugPreventionAPI.Models;
+﻿using DrugPreventionAPI.DTO;
+using DrugPreventionAPI.Models;
 
 namespace DrugPreventionAPI.Interfaces
 {
@@ -7,7 +8,7 @@ namespace DrugPreventionAPI.Interfaces
         Task<IEnumerable<BlogPost>> GetAllAsync();
         Task<BlogPost?> GetByIdAsync(int id);
         Task<BlogPost> AddAsync(BlogPost post, IEnumerable<int> tagIds);
-        Task<BlogPost> UpdateAsync(BlogPost post, IEnumerable<int> tagIds);
+        Task<BlogPost> UpdateAsync(UpdateBlogPostDTO dto);
         Task DeleteAsync(int id);
     }
 }

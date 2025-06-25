@@ -1,4 +1,5 @@
 ﻿using DrugPreventionAPI.Data;
+using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -42,20 +43,39 @@ namespace DrugPreventionAPI.Repositories
                    .FirstOrDefaultAsync(bp => bp.Id == id);
 
 
-        public async Task<BlogPost> UpdateAsync(BlogPost post, IEnumerable<int> tagIds)
+        public async Task<BlogPost> UpdateAsync(UpdateBlogPostDTO dto)
         {
-            // clear existing
-            var exists = _ctx.BlogTags.Where(bt => bt.BlogPostId == post.Id);
-            _ctx.BlogTags.RemoveRange(exists);
+            
+            // 1. Parse the post’s key
+            if (!int.TryParse(dto.id, out var postId))
+                throw new ArgumentException($"Invalid post ID");
 
-            // add new tags
-            post.BlogTags = tagIds
-                .Select(tid => new BlogTag { BlogPostId = post.Id, TagId = tid })
+            var post = await _ctx.BlogPosts
+         .Include(bp => bp.BlogTags)           // need existing tags
+         .FirstOrDefaultAsync(bp => bp.Id == postId);
+
+            if (post == null) throw new KeyNotFoundException();
+
+            // map scalars
+            post.Title = dto.Title;
+            post.Content = dto.Content;
+            post.CoverImageUrl = dto.CoverImageUrl;
+
+            // clear old tag links
+            var old = _ctx.BlogTags.Where(bt => bt.BlogPostId == postId);
+            _ctx.BlogTags.RemoveRange(old);
+
+            // attach new ones
+            post.BlogTags = dto.TagIds
+                .Select(tid => new BlogTag { BlogPostId = postId, TagId = tid })
                 .ToList();
 
             _ctx.BlogPosts.Update(post);
             await _ctx.SaveChangesAsync();
+
             return post;
         }
+
+      
     }
 }

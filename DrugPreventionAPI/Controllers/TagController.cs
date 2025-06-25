@@ -21,15 +21,15 @@ namespace DrugPreventionAPI.Controllers
 
         [HttpGet("{tagid}")]
         [AllowAnonymous]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get(int tagid)
         {
-            var t = await _repo.GetByIdAsync(id);
+            var t = await _repo.GetByIdAsync(tagid);
             if (t == null) return NotFound();
             return Ok(_mapper.Map<TagDTO>(t));
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Manager")]
         public async Task<IActionResult> Create(CreateTagDTO dto)
         {
             var tag = _mapper.Map<Tag>(dto);
@@ -37,22 +37,22 @@ namespace DrugPreventionAPI.Controllers
             return CreatedAtAction(nameof(Get), new { id = created.Id }, _mapper.Map<TagDTO>(created));
         }
 
-        [HttpPut("{admin-update-tagid}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(int id, CreateTagDTO dto)
+        [HttpPut("{tagid}")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> Update(int tagid, CreateTagDTO dto)
         {
-            var tag = await _repo.GetByIdAsync(id);
+            var tag = await _repo.GetByIdAsync(tagid);
             if (tag == null) return NotFound();
             _mapper.Map(dto, tag);
             var updated = await _repo.UpdateAsync(tag);
             return Ok(_mapper.Map<TagDTO>(updated));
         }
 
-        [HttpDelete("{admin-delete-tagid}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("{tagid}")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> Delete(int tagid)
         {
-            await _repo.DeleteAsync(id);
+            await _repo.DeleteAsync(tagid);
             return NoContent();
         }
     }

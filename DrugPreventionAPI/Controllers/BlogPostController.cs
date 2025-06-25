@@ -20,17 +20,17 @@ namespace DrugPreventionAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAll() => Ok(_mapper.Map<IEnumerable<BlogPostDTO>>(await _repo.GetAllAsync()));
 
-        [HttpGet("{get-BlogPostId}")]
+        [HttpGet("{getBlogPostId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get(int getBlogPostId)
         {
-            var bp = await _repo.GetByIdAsync(id);
+            var bp = await _repo.GetByIdAsync(getBlogPostId);
             if (bp == null) return NotFound();
             return Ok(_mapper.Map<BlogPostDTO>(bp));
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Manager")]
         public async Task<IActionResult> Create(CreateBlogPostDTO dto)
         {
             var post = _mapper.Map<BlogPost>(dto);
@@ -40,22 +40,22 @@ namespace DrugPreventionAPI.Controllers
             return CreatedAtAction(nameof(Get), new { id = created.Id }, _mapper.Map<BlogPostDTO>(created));
         }
 
-        [HttpPut("{update-tagId}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(int id, UpdateBlogPostDTO dto)
+        [HttpPut("{updateId}")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> Update(int updateId, UpdateBlogPostDTO dto)
         {
-            var post = await _repo.GetByIdAsync(id);
+            var post = await _repo.GetByIdAsync(updateId);
             if (post == null) return NotFound();
             _mapper.Map(dto, post);
-            var updated = await _repo.UpdateAsync(post, dto.TagIds);
+            var updated = await _repo.UpdateAsync(dto);
             return Ok(_mapper.Map<BlogPostDTO>(updated));
         }
 
         [HttpDelete("{BlogPostId}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int id)
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> Delete(int BlogPostId)
         {
-            await _repo.DeleteAsync(id);
+            await _repo.DeleteAsync(BlogPostId);
             return NoContent();
         }
 
