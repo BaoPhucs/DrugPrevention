@@ -61,7 +61,7 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateQuestionDTO, QuestionBank>();
             CreateMap<CreateOptionDTO, QuestionOption>();
 
-            //6. Inquiry <-> InquiryAssignment
+            //Inquiry <-> InquiryAssignment
             CreateMap<InquiryAssignment, InquiryAssignmentDTO>();
             CreateMap<CreateInquiryAssignment, InquiryAssignment>()
                 .ForMember(d => d.AssignedDate,

@@ -199,33 +199,38 @@ public partial class DataContext : DbContext
 
         modelBuilder.Entity<Comment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Comment__3214EC275602B43A");
-
             entity.ToTable("Comment");
+            entity.HasKey(e => e.Id);
 
-            entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Content).IsUnicode(false);
-            entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.EntityId).HasColumnName("EntityID");
-            entity.Property(e => e.EntityType)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.MemberId).HasColumnName("MemberID");
-            entity.Property(e => e.ParentCommentId).HasColumnName("ParentCommentID");
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasDefaultValue("Visible");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Status).HasMaxLength(20).IsUnicode(false).HasDefaultValue("Visible");
 
-            entity.HasOne(d => d.Member).WithMany(p => p.Comments)
-                .HasForeignKey(d => d.MemberId)
-                .HasConstraintName("FK_Comment_Member");
+            // Quan hệ với User (Member)
+            entity.HasOne(e => e.Member)
+                  .WithMany(u => u.Comments)
+                  .HasForeignKey(e => e.MemberId)
+                  .HasConstraintName("FK_Comment_Member");
 
-            entity.HasOne(d => d.ParentComment).WithMany(p => p.InverseParentComment)
-                .HasForeignKey(d => d.ParentCommentId)
-                .HasConstraintName("FK_Comment_Parent");
+            // Quan hệ đệ quy Parent → Replies
+            entity.HasOne(e => e.ParentComment)
+                  .WithMany(e => e.Replies)
+                  .HasForeignKey(e => e.ParentCommentId)
+                  .HasConstraintName("FK_Comment_Parent");
+
+            // Quan hệ tới BlogPost
+            entity.HasOne(e => e.BlogPost)
+                  .WithMany(bp => bp.Comments)
+                  .HasForeignKey(e => e.BlogPostId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_Comment_BlogPost");
+
+            // Quan hệ tới CommunicationActivity
+            entity.HasOne(e => e.Activity)
+                  .WithMany(a => a.Comments)
+                  .HasForeignKey(e => e.ActivityId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_Comment_Activity");
         });
 
         modelBuilder.Entity<CommunicationActivity>(entity =>
