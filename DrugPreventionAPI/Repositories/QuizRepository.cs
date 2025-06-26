@@ -9,9 +9,11 @@ namespace DrugPreventionAPI.Repositories
     public class QuizRepository : IQuizRepository
     {
         private readonly DataContext _context;
-        public QuizRepository(DataContext context)
+        private readonly ICertificateRepository _certRepo;
+        public QuizRepository(DataContext context, ICertificateRepository certificateRepository)
         {
             _context = context;
+            _certRepo = certificateRepository;
         }
 
         public async Task<IEnumerable<QuizQuestionDTO>> GetQuizQuestionsAsync(int courseId, int count)
@@ -27,6 +29,7 @@ namespace DrugPreventionAPI.Repositories
                         join q in _context.QuestionBanks on cq.QuestionId equals q.Id
                         where cq.CourseId == courseId
                               && q.Level == course.Level
+                              && q.Category == course.Category
                         select new
                         {
                             q.Id,
@@ -131,6 +134,7 @@ namespace DrugPreventionAPI.Repositories
             // 4) Nếu pass, cập nhật CourseEnrollment.Status
             if (submission.PassedStatus == true)
             {
+                // 1) cập nhật enrollment
                 var enroll = await _context.CourseEnrollments
                     .FirstOrDefaultAsync(e => e.CourseId == courseId && e.MemberId == memberId);
                 if (enroll != null)
@@ -138,6 +142,17 @@ namespace DrugPreventionAPI.Repositories
                     enroll.Status = "Completed";
                     await _context.SaveChangesAsync();
                 }
+
+                // 2) Tạo certificate
+                var certNo = $"CERT-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+                var certificate = new Certificate
+                {
+                    MemberId = memberId,
+                    CourseId = courseId,
+                    CertificateNo = certNo,
+                    IssuedDate = DateTime.UtcNow
+                };
+                await _certRepo.CreateAsync(certificate);
             }
 
             return submission;

@@ -20,8 +20,10 @@ namespace DrugPreventionAPI.Interfaces
         //Content‐workflow
         Task<bool> ApproveAsync(int courseId);                   // Manager duyệt
         Task<bool> RejectAsync(int courseId, string comments);
+        Task<bool> PublicCourse(int couseId, int userId);
         Task<bool> SubmitToStaffAsync(int courseId, int userId);
         Task<bool> SubmitToManagerAsync(int courseId, int userId);
 
+        Task<bool> SchedulePublishAsync(int courseId, DateTime publishAt);
     }
 }

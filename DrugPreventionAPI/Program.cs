@@ -42,7 +42,7 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IConsultationNoteRepository, ConsultationNoteRepository>();
             builder.Services.AddScoped<IAppointmentRequestRepository, AppointmentRequestRepository>();
             builder.Services.AddScoped<IConsultantScheduleRepository, ConsultantScheduleRepository>();
-
+            builder.Services.AddScoped<ICertificateRepository, CertificateRepository>();
             // Email service
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();

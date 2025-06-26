@@ -31,6 +31,8 @@ public partial class User
 
     public DateTime? CreatedDate { get; set; }
 
+    public ICollection<Certificate> Certificates { get; set; }
+
     public ICollection<ActivityParticipation> ActivityParticipations { get; set; } 
 
     public ICollection<AppointmentRequest> AppointmentRequestConsultants { get; set; }

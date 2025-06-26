@@ -19,7 +19,7 @@ namespace DrugPreventionAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpPost("courses/{courseId:int}/enroll")]
+        [HttpPost("courses/{courseId:int}/unenroll")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> Enroll(int courseId, [FromBody] int? memberId = null)
         {
