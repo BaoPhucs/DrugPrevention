@@ -119,7 +119,7 @@ namespace DrugPreventionAPI.Controllers
             course.CreatedById = CurrentUserId; // Gán ID người dùng hiện tại
             course.CreatedDate = DateTime.UtcNow; // Gán ngày tạo
             course.Status = "Pending"; // Mặc định trạng thái là Pending
-
+            course.WorkflowState = "Draft";
             var result = await _courseRepository.CreateCourseAsync(course);
             if (!result)
             {
@@ -192,6 +192,24 @@ namespace DrugPreventionAPI.Controllers
                 return NotFound($"Course with ID {id} not found or already rejected");
             }
             return NoContent(); // Trả về 204 No Content nếu từ chối thành công
+        }
+
+        [HttpPost("{courseId}/submit-to-staff")]
+        [Authorize(Roles = "Consultant")]
+        public async Task<IActionResult> SubmitToStaff(int courseId)
+        {
+            var ok = await _courseRepository.SubmitToStaffAsync(courseId, CurrentUserId);
+            if (!ok) return BadRequest("Không hợp lệ hoặc khóa học không ở trạng thái Draft.");
+            return NoContent();
+        }
+
+        [HttpPost("{courseId}/submit-to-manager")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> SubmitToManager(int courseId)
+        {
+            var ok = await _courseRepository.SubmitToManagerAsync(courseId, CurrentUserId);
+            if (!ok) return BadRequest("Không hợp lệ hoặc khóa học chưa được gửi tới Staff.");
+            return NoContent();
         }
     }
 }

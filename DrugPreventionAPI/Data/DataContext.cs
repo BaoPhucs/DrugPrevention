@@ -335,6 +335,10 @@ public partial class DataContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Pending");
+            entity.Property(e => e.WorkflowState)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasDefaultValue("Draft");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);
@@ -763,6 +767,10 @@ public partial class DataContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.EmailVerified).HasDefaultValue(false);
+            entity.Property(e => e.EmailVerificationExpiry).HasColumnType("datetime");
+            entity.Property(e => e.EmailVerificationToken)
+                .HasMaxLength(100)
+                .IsUnicode(false);
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .IsUnicode(false);

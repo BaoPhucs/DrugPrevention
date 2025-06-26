@@ -66,7 +66,7 @@ namespace DrugPreventionAPI.Repositories
         public async Task<QuizSubmission> GetSubmissionByIdAsync(int submissionId)
         {
             return await _context.QuizSubmissions
-                .Include(s => s.QuizSubmissionAnswers)
+                .Include(s => s.QuizSubmissionAnswers).ThenInclude(a => a.Option)
                 .FirstOrDefaultAsync(s => s.Id == submissionId)
                 ?? throw new KeyNotFoundException("Submission not found");
         }
@@ -87,7 +87,7 @@ namespace DrugPreventionAPI.Repositories
                 .ToListAsync();
         }
 
-        public async Task<QuizSubmission> SubmitQuizAsync(int courseId, int memberId, IEnumerable<QuizAnswerDTO> answers)
+        public async Task<QuizSubmission> SubmitQuizAsync(int courseId, int memberId, IEnumerable<QuizAnswerSubmissionDTO> answers)
         {
             // 1) Tạo QuizSubmission
             var submission = new QuizSubmission

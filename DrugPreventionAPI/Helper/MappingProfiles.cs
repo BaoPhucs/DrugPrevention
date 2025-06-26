@@ -26,7 +26,8 @@ namespace DrugPreventionAPI.Helper
             CreateMap<QuizSubmissionAnswer, QuizAnswerDTO>()
                 // QuizSubmissionAnswer.QuestionId là int? nên phải null-coalesce
                 .ForMember(d => d.QuestionId, o => o.MapFrom(s => s.QuestionId ?? 0))
-                .ForMember(d => d.OptionId, o => o.MapFrom(s => s.OptionId ?? 0));
+                .ForMember(d => d.OptionId, o => o.MapFrom(s => s.OptionId ?? 0))
+                .ForMember(d => d.ScoreValue, o => o.MapFrom(src => src.Option.ScoreValue));
 
             // 2) QuizSubmission → QuizSubmissionReadDTO
             CreateMap<QuizSubmission, QuizSubmissionReadDTO>();
@@ -78,27 +79,6 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
             CreateMap<CreateUserInquiryDTO, UserInquiry>()
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
-
-            //7. Tag, TagDTO, BlogPost - DTO
-            // Tag
-            CreateMap<Tag, TagDTO>();
-            CreateMap<CreateTagDTO, Tag>();
-
-            // BlogPost → DTO
-            CreateMap<BlogPost, BlogPostDTO>()
-                .ForMember(d => d.Tags,
-                           o => o.MapFrom(s => s.BlogTags.Select(bt => bt.Tag)));
-
-            // DTO → BlogPost
-            CreateMap<CreateBlogPostDTO, BlogPost>()
-                .ForMember(d => d.BlogTags, opt => opt.Ignore())
-                .ForMember(d => d.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(d => d.UpdatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow));
-
-            CreateMap<UpdateBlogPostDTO, BlogPost>()
-                .ForMember(d => d.BlogTags, opt => opt.Ignore())
-                .ForMember(d => d.UpdatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow));
-
 
         }
     }

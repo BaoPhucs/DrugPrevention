@@ -2,6 +2,8 @@
 {
     public class CourseMaterialDTO
     {
+        public int Id { get; set; }
+
         public int? CourseId { get; set; }
 
         public string? Type { get; set; }

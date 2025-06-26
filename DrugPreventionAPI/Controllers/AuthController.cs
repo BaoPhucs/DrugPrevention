@@ -1,11 +1,18 @@
 ﻿using AutoMapper;
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
+using DrugPreventionAPI.Models;
+using DrugPreventionAPI.Repositories;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DrugPreventionAPI.Controllers
@@ -16,69 +23,189 @@ namespace DrugPreventionAPI.Controllers
     {
         private readonly IAuthRepository _authRepository;
         private readonly IMapper _mapper;
-
-        public AuthController(IAuthRepository authRepository, IMapper mapper)
+        private readonly IEmailService _emailService;
+        private readonly IUserManagementRepository _userRepository;
+        private readonly IAdminRepository _adminRepository;
+        private readonly IConfiguration _configuration;
+        public AuthController(IAuthRepository authRepository, IMapper mapper, IEmailService emailService, IAdminRepository adminRepository, IUserManagementRepository userRepository , IConfiguration configuration)
         {
             _authRepository = authRepository;
             _mapper = mapper;
+            _emailService = emailService;
+            _adminRepository = adminRepository;
+            _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequest)
         {
             if (string.IsNullOrWhiteSpace(loginRequest.Email) || string.IsNullOrWhiteSpace(loginRequest.Password))
-            {
                 return BadRequest("Email and password are required");
-            }   
 
             var user = await _authRepository.LoginAsync(loginRequest.Email, loginRequest.Password);
             if (user == null)
-            {
                 return Unauthorized("Invalid email or password");
-            }
 
-            // Tạo session cookie với vai trò từ DB
-            var role = user.Role ?? "Member".ToLower(); // Lấy vai trò từ DB, mặc định là "user"
+            // 1) Chuẩn bị các claim
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, role),
-                new Claim(ClaimTypes.Name, user.Name)
-            };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.Role, user.Role ?? "Member"),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
-            return Ok(new { user.Id, user.Email, role, user.Name}); // Trả về thông tin cơ bản
+            // 2) Lấy cấu hình JWT từ appsettings
+            var jwtSettings = _configuration.GetSection("Jwt");
+            var keyBytes = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+            var creds = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpireMinutes"]));
+
+            // 3) Tạo token
+            var jwt = new JwtSecurityToken(
+                issuer: jwtSettings["Issuer"],
+                audience: jwtSettings["Audience"],
+                claims: claims,
+                expires: expires,
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            // 4) Trả về kèm tiền tố "Bearer "
+            return Ok(new
+            {
+                token = $"Bearer {tokenString}",
+                expires = expires
+            });
         }
 
         [HttpPost("google-login")]
+        [AllowAnonymous]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDTO googleRequest)
         {
             if (string.IsNullOrWhiteSpace(googleRequest.GoogleToken))
-            {
                 return BadRequest("Google token is required");
-            }
 
             var user = await _authRepository.AuthenticateGoogleAsync(googleRequest.GoogleToken);
             if (user == null)
-            {
                 return Unauthorized("Invalid Google token");
-            }
 
+            // 1) Tạo danh sách claims
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? "Member"),
-                new Claim(ClaimTypes.Name, user.Name) 
-            };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.Role,               user.Role ?? "Member"),
+        new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString())
+    };
 
-            return Ok(new { user.Id, user.Email, Role = user.Role, user.Name }); // Trả về thông tin cơ bản
+            // 2) Lấy config và ký token
+            var jwtSettings = _configuration.GetSection("Jwt");
+            var keyBytes = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+            var creds = new SigningCredentials(new SymmetricSecurityKey(keyBytes),
+                                                     SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddMinutes(
+                                double.Parse(jwtSettings["ExpireMinutes"]));
+
+            // 3) Tạo JWT
+            var jwt = new JwtSecurityToken(
+                issuer: jwtSettings["Issuer"],
+                audience: jwtSettings["Audience"],
+                claims: claims,
+                notBefore: DateTime.UtcNow,
+                expires: expires,
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            // 4) Trả về kèm tiền tố "Bearer "
+            return Ok(new
+            {
+                token = $"Bearer {tokenString}",
+                expires = expires
+            });
+        }
+
+
+
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterUserDTO registerDto)
+        {
+            if (string.IsNullOrWhiteSpace(registerDto.Email) || string.IsNullOrWhiteSpace(registerDto.Password) ||
+                string.IsNullOrWhiteSpace(registerDto.Name) || registerDto.Dob == null)
+            {
+                return BadRequest("All required fields (email, password, name, dob) must be provided");
+            }
+
+            // Kiểm tra định dạng email
+            if (!new EmailAddressAttribute().IsValid(registerDto.Email))
+            {
+                return BadRequest("Invalid email format");
+            }
+
+            // Kiểm tra độ dài mật khẩu
+            if (registerDto.Password.Length < 6)
+            {
+                return BadRequest("Password must be at least 6 characters long");
+            }
+
+            // Kiểm tra email đã tồn tại
+            if (await _adminRepository.UserExistAsync(registerDto.Email))
+            {
+                return BadRequest("Email already exists");
+            }
+
+            // Tạo và ánh xạ thủ công sang User
+            var user = new User
+            {
+                Name = registerDto.Name,
+                Dob = registerDto.Dob,
+                Phone = registerDto.Phone, // Null nếu chưa có
+                Email = registerDto.Email,
+                Password = registerDto.Password, // Lưu mật khẩu thô
+                AgeGroup = registerDto.AgeGroup, // Null nếu chưa có
+                Role = "Member", // Giá trị mặc định từ model
+                EmailVerified = false, // Giả sử đã xác minh
+                CreatedDate = DateTime.UtcNow
+            };
+
+            if (!await _authRepository.RegisterAsync(user))
+                return StatusCode(500, "Error registering user");
+
+            // Sinh token xác thực và lưu (cần cài thêm method trong IAuthRepository)
+            var token = await _authRepository.GenerateEmailVerificationTokenAsync(user.Email);
+
+            // Gửi email xác thực
+            var confirmUrl = $"{Request.Scheme}://{Request.Host}/api/auth/confirm-email?token={token}";
+            var html = $@"
+                <p>Hello {user.Name},</p>
+                <p>Please click <a href=""{confirmUrl}"">here</a> to verify your email.</p>
+                <p>This link is valid for 24 hours.</p>";
+
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "DrugPrevention Email Authentication",
+                html
+            );
+
+            return Accepted(new { Message = "Please check your email for verification." });
+        }
+
+        [HttpGet("confirm-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest("Invalid token.");
+
+            var ok = await _authRepository.ConfirmEmailAsync(token);
+            if (!ok) return BadRequest("The authentication link is invalid or has expired.");
+
+            return Ok("Email verification successful! You can log in now.");
         }
 
         [HttpPost("change-password")]
@@ -117,19 +244,21 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("reset-password")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetPasswordDTO)
         {
-            if (string.IsNullOrWhiteSpace(resetPasswordDTO.Email))
-            {
-                return BadRequest("Email must be provided");
-            }
+            // 1) Sinh mật khẩu mới
+            var newPwd = _authRepository.GenerateRandomPassword(8);
+            var updated = await _authRepository.UpdatePasswordAsync(resetPasswordDTO.Email, newPwd);
+            if (!updated) return NotFound("Email does not exist");
 
-            var result = await _authRepository.ResetPasswordAsync(resetPasswordDTO.Email);
-            if (!result)
-            {
-                return NotFound($"User with email {resetPasswordDTO.Email} not found");
-            }
+            // 2) Gửi email cho user
+            var html = $"<p>Hello,</p>"
+                     + $"<p>Your new password is: <strong>{newPwd}</strong></p>"
+                     + "<p>Please login and change your password now.</p>";
+            await _emailService.SendEmailAsync(resetPasswordDTO.Email,
+                                              "Reset pasword DrugPrevention",
+                                              html);
 
             return Ok("Password reset link sent to your email"); // Trả về thông báo thành công
         }

@@ -35,7 +35,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         [HttpGet("get-question/{id}")]
-        [Authorize(Roles = "Manager, Consultant")]
+        [Authorize(Roles = "Manager, Consultant, Staff, Member")]
         public async Task<IActionResult> GetQuestion(int id)
         {
             var question = await _questionRepository.GetByIdAsync(id);
@@ -49,22 +49,63 @@ namespace DrugPreventionAPI.Controllers
         }
 
 
+        //[HttpPost("create-question")]
+        //[Authorize(Roles = "Manager, Consultant")]
+        //public async Task<IActionResult> CreateQuestion([FromBody] CreateQuestionDTO dto)
+        //{
+        //    if (!ModelState.IsValid)
+        //        return BadRequest(ModelState);
+
+        //    var entity = _mapper.Map<QuestionBank>(dto);
+        //    var created = await _questionRepository.CreateAsync(entity);
+        //    if (!created)
+        //        return StatusCode(500, "Error creating question");
+
+        //    // Lấy lại question có options rỗng
+        //    var resultDto = _mapper.Map<QuestionDTO>(entity);
+        //    return CreatedAtAction(nameof(GetQuestion), new { id = resultDto.Id }, resultDto);
+        //}
+
+
+        // Tạo 1 câu hỏi
         [HttpPost("create-question")]
         [Authorize(Roles = "Manager, Consultant")]
-        public async Task<IActionResult> CreateQuestion([FromBody] CreateQuestionDTO dto)
+        public async Task<IActionResult> Create([FromBody] CreateQuestionDTO dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var entity = _mapper.Map<QuestionBank>(dto);
             var created = await _questionRepository.CreateAsync(entity);
-            if (!created)
-                return StatusCode(500, "Error creating question");
-
-            // Lấy lại question có options rỗng
-            var resultDto = _mapper.Map<QuestionDTO>(entity);
-            return CreatedAtAction(nameof(GetQuestion), new { id = resultDto.Id }, resultDto);
+            var result = _mapper.Map<QuestionDTO>(created);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
+
+        // (tùy chọn) tạo nhiều câu hỏi
+        [HttpPost("create-questions")]
+        [Authorize(Roles = "Manager, Consultant")]
+        public async Task<IActionResult> CreateBatch([FromBody] IEnumerable<CreateQuestionDTO> dtos)
+        {
+            var entities = _mapper.Map<IEnumerable<QuestionBank>>(dtos);
+            var created = await _questionRepository.CreateRangeAsync(entities);
+            var results = _mapper.Map<IEnumerable<QuestionDTO>>(created);
+            return Ok(results);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var q = await _questionRepository.GetByIdAsync(id);
+            if (q == null) return NotFound();
+            return Ok(_mapper.Map<QuestionDTO>(q));
+        }
+
+
+
+
+
+
+
+
+
+
 
         [HttpPut("update-question/{id}")]
         [Authorize(Roles = "Manager, Consultant")]

@@ -1,9 +1,8 @@
 ﻿namespace DrugPreventionAPI.DTO
 {
-    public class QuizAnswerDTO
+    public class QuizAnswerSubmissionDTO
     {
         public int QuestionId { get; set; }
         public int OptionId { get; set; }
-        public int ScoreValue { get; set; }
     }
 }
