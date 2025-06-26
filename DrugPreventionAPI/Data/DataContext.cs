@@ -36,6 +36,8 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<CourseMaterial> CourseMaterials { get; set; }
 
+    public virtual DbSet<Certificate> Certificates { get; set; }
+
     public virtual DbSet<InquiryAssignment> InquiryAssignments { get; set; }
 
     public virtual DbSet<InquiryComment> InquiryComments { get; set; }
@@ -155,25 +157,6 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.BlogPosts)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_BlogPost_Author");
-
-            //entity.HasMany(d => d.Tags).WithMany(p => p.BlogPosts)
-            //    .UsingEntity<Dictionary<string, object>>(
-            //        "BlogTag",
-            //        r => r.HasOne<Tag>().WithMany()
-            //            .HasForeignKey("TagId")
-            //            .OnDelete(DeleteBehavior.ClientSetNull)
-            //            .HasConstraintName("FK_BlogTag_Tag"),
-            //        l => l.HasOne<BlogPost>().WithMany()
-            //            .HasForeignKey("BlogPostId")
-            //            .OnDelete(DeleteBehavior.ClientSetNull)
-            //            .HasConstraintName("FK_BlogTag_Post"),
-            //        j =>
-            //        {
-            //            j.HasKey("BlogPostId", "TagId");
-            //            j.ToTable("BlogTag");
-            //            j.IndexerProperty<int>("BlogPostId").HasColumnName("BlogPostID");
-            //            j.IndexerProperty<int>("TagId").HasColumnName("TagID");
-            //        });
         });
 
         modelBuilder.Entity<BlogTag>(entity =>
@@ -352,25 +335,10 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.Courses)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_Course_Creator");
-
-            //entity.HasMany(d => d.Questions).WithMany(p => p.Courses)
-            //    .UsingEntity<Dictionary<string, object>>(
-            //        "CourseQuestion",
-            //        r => r.HasOne<QuestionBank>().WithMany()
-            //            .HasForeignKey("QuestionId")
-            //            .OnDelete(DeleteBehavior.ClientSetNull)
-            //            .HasConstraintName("FK_CourseQuestion_Question"),
-            //        l => l.HasOne<Course>().WithMany()
-            //            .HasForeignKey("CourseId")
-            //            .OnDelete(DeleteBehavior.ClientSetNull)
-            //            .HasConstraintName("FK_CourseQuestion_Course"),
-            //        j =>
-            //        {
-            //            j.HasKey("CourseId", "QuestionId");
-            //            j.ToTable("CourseQuestion");
-            //            j.IndexerProperty<int>("CourseId").HasColumnName("CourseID");
-            //            j.IndexerProperty<int>("QuestionId").HasColumnName("QuestionID");
-            //        });
+            entity.Property(e => e.PublishAt)
+                .HasColumnName("PublishAt")
+                .HasColumnType("datetime")
+                .IsRequired(false);
         });
 
 
@@ -442,6 +410,33 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.Course).WithMany(p => p.CourseMaterials)
                 .HasForeignKey(d => d.CourseId)
                 .HasConstraintName("FK_CourseMaterial_Course");
+        });
+
+        modelBuilder.Entity<Certificate>(entity =>
+        {
+            entity.ToTable("Certificate");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.CertificateNo)
+                  .HasMaxLength(50)
+                  .IsUnicode(false)
+                  .IsRequired();
+
+            entity.Property(e => e.FileUrl)
+                  .HasMaxLength(255)
+                  .IsUnicode(false);
+
+            entity.HasOne(e => e.Member)
+                  .WithMany(u => u.Certificates)
+                  .HasForeignKey(e => e.MemberId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_Certificate_Member");
+
+            entity.HasOne(e => e.Course)
+                  .WithMany(c => c.Certificates)
+                  .HasForeignKey(e => e.CourseId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_Certificate_Course");
         });
 
         modelBuilder.Entity<InquiryAssignment>(entity =>
@@ -544,6 +539,9 @@ public partial class DataContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .IsUnicode(false);
             entity.Property(e => e.Level)
                 .HasMaxLength(20)
                 .IsUnicode(false);
