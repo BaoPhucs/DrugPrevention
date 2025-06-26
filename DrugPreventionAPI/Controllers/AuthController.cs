@@ -7,8 +7,12 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace DrugPreventionAPI.Controllers
@@ -22,72 +26,110 @@ namespace DrugPreventionAPI.Controllers
         private readonly IEmailService _emailService;
         private readonly IUserManagementRepository _userRepository;
         private readonly IAdminRepository _adminRepository;
-        public AuthController(IAuthRepository authRepository, IMapper mapper, IEmailService emailService, IAdminRepository adminRepository, IUserManagementRepository userRepository)
+        private readonly IConfiguration _configuration;
+        public AuthController(IAuthRepository authRepository, IMapper mapper, IEmailService emailService, IAdminRepository adminRepository, IUserManagementRepository userRepository , IConfiguration configuration)
         {
             _authRepository = authRepository;
             _mapper = mapper;
             _emailService = emailService;
             _adminRepository = adminRepository;
             _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginRequest)
         {
             if (string.IsNullOrWhiteSpace(loginRequest.Email) || string.IsNullOrWhiteSpace(loginRequest.Password))
-            {
                 return BadRequest("Email and password are required");
-            }   
 
             var user = await _authRepository.LoginAsync(loginRequest.Email, loginRequest.Password);
             if (user == null)
-            {
                 return Unauthorized("Invalid email or password");
-            }
 
-            // Tạo session cookie với vai trò từ DB
-            var role = user.Role ?? "Member".ToLower(); // Lấy vai trò từ DB, mặc định là "user"
+            // 1) Chuẩn bị các claim
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, role),
-                new Claim(ClaimTypes.Name, user.Name)
-            };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.Role, user.Role ?? "Member"),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
-            return Ok(new { user.Id, user.Email, role, user.Name}); // Trả về thông tin cơ bản
+            // 2) Lấy cấu hình JWT từ appsettings
+            var jwtSettings = _configuration.GetSection("Jwt");
+            var keyBytes = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+            var creds = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpireMinutes"]));
+
+            // 3) Tạo token
+            var jwt = new JwtSecurityToken(
+                issuer: jwtSettings["Issuer"],
+                audience: jwtSettings["Audience"],
+                claims: claims,
+                expires: expires,
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            // 4) Trả về kèm tiền tố "Bearer "
+            return Ok(new
+            {
+                token = $"Bearer {tokenString}",
+                expires = expires
+            });
         }
 
         [HttpPost("google-login")]
+        [AllowAnonymous]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDTO googleRequest)
         {
             if (string.IsNullOrWhiteSpace(googleRequest.GoogleToken))
-            {
                 return BadRequest("Google token is required");
-            }
 
             var user = await _authRepository.AuthenticateGoogleAsync(googleRequest.GoogleToken);
             if (user == null)
-            {
                 return Unauthorized("Invalid Google token");
-            }
 
+            // 1) Tạo danh sách claims
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? "Member"),
-                new Claim(ClaimTypes.Name, user.Name) 
-            };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(ClaimTypes.Role,               user.Role ?? "Member"),
+        new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString())
+    };
 
-            return Ok(new { user.Id, user.Email, Role = user.Role, user.Name }); // Trả về thông tin cơ bản
+            // 2) Lấy config và ký token
+            var jwtSettings = _configuration.GetSection("Jwt");
+            var keyBytes = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
+            var creds = new SigningCredentials(new SymmetricSecurityKey(keyBytes),
+                                                     SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddMinutes(
+                                double.Parse(jwtSettings["ExpireMinutes"]));
+
+            // 3) Tạo JWT
+            var jwt = new JwtSecurityToken(
+                issuer: jwtSettings["Issuer"],
+                audience: jwtSettings["Audience"],
+                claims: claims,
+                notBefore: DateTime.UtcNow,
+                expires: expires,
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            // 4) Trả về kèm tiền tố "Bearer "
+            return Ok(new
+            {
+                token = $"Bearer {tokenString}",
+                expires = expires
+            });
         }
+
+
 
 
         [HttpPost("register")]
