@@ -19,7 +19,12 @@ namespace DrugPreventionAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // 1. Đăng ký DbContext
+            builder.Services.AddDbContext<DataContext>(options =>
+                options.UseSqlServer(builder.Configuration
+                    .GetConnectionString("DefaultConnection")));
+
+            // 2. Đăng ký các Service/Repository
             builder.Services.AddScoped<IInquiryAssignmentRepository, InquiryAssignmentRepository>();
             builder.Services.AddScoped<IInquiryCommentRepository, InquiryCommentRepository>();
             builder.Services.AddScoped<IUserInquiryRepository, UserInquiryRepository>();
@@ -37,6 +42,8 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IConsultationNoteRepository, ConsultationNoteRepository>();
             builder.Services.AddScoped<IAppointmentRequestRepository, AppointmentRequestRepository>();
             builder.Services.AddScoped<IConsultantScheduleRepository, ConsultantScheduleRepository>();
+            builder.Services.AddScoped<IBlogPostRepo, BlogPostRepo>();
+            builder.Services.AddScoped<ITagRepo, TagRepo>();
 
             // Email service
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));

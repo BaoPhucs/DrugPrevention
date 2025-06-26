@@ -8,7 +8,7 @@ namespace DrugPreventionAPI.Interfaces
         Task<IEnumerable<BlogPost>> GetAllAsync();
         Task<BlogPost?> GetByIdAsync(int id);
         Task<BlogPost> AddAsync(BlogPost post, IEnumerable<int> tagIds);
-        Task<BlogPost> UpdateAsync(UpdateBlogPostDTO dto);
+        Task<BlogPost> UpdateAsync(int id, UpdateBlogPostDTO dto);
         Task DeleteAsync(int id);
     }
 }

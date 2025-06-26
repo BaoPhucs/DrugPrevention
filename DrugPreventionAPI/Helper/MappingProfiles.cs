@@ -21,6 +21,25 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CourseMaterial, CourseMaterialReadDTO>();
             CreateMap<UserDTO, User>();
             CreateMap<CourseEnrollment, CourseEnrollmentDTO>();
+            // Entity → DTO
+            CreateMap<BlogPost, BlogPostDTO>()
+                // if your DTO has a plain Tags collection, map via the join table:
+                .ForMember(dest => dest.Tags,
+                    opt => opt.MapFrom(src => src.BlogTags.Select(bt => bt.Tag)));
+
+            // (Optionally, if you want two-way mapping)
+            CreateMap<BlogPostDTO, BlogPost>();
+            CreateMap<Tag, TagDTO>();
+            CreateMap<CreateTagDTO, Tag>();
+            // incoming POST
+            CreateMap<CreateBlogPostDTO, BlogPost>()
+                // ignore ID (won’t be set by the client)
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            // incoming PUT
+            CreateMap<UpdateBlogPostDTO, BlogPost>()
+                // the repo already loads the existing entity (so you don’t overwrite the PK)
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
 
             // 1) QuizSubmissionAnswer → QuizAnswerDTO
             CreateMap<QuizSubmissionAnswer, QuizAnswerDTO>()

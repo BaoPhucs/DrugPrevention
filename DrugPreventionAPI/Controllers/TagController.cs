@@ -34,7 +34,7 @@ namespace DrugPreventionAPI.Controllers
         {
             var tag = _mapper.Map<Tag>(dto);
             var created = await _repo.AddAsync(tag);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, _mapper.Map<TagDTO>(created));
+            return CreatedAtAction(nameof(Get), new { tagid = created.Id }, _mapper.Map<TagDTO>(created));
         }
 
         [HttpPut("{tagid}")]

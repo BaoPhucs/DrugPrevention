@@ -20,11 +20,11 @@ namespace DrugPreventionAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAll() => Ok(_mapper.Map<IEnumerable<BlogPostDTO>>(await _repo.GetAllAsync()));
 
-        [HttpGet("{getBlogPostId}")]
+        [HttpGet("{id}")]
         [AllowAnonymous]
-        public async Task<IActionResult> Get(int getBlogPostId)
+        public async Task<IActionResult> Get(int id)
         {
-            var bp = await _repo.GetByIdAsync(getBlogPostId);
+            var bp = await _repo.GetByIdAsync(id);
             if (bp == null) return NotFound();
             return Ok(_mapper.Map<BlogPostDTO>(bp));
         }
@@ -40,14 +40,12 @@ namespace DrugPreventionAPI.Controllers
             return CreatedAtAction(nameof(Get), new { id = created.Id }, _mapper.Map<BlogPostDTO>(created));
         }
 
-        [HttpPut("{updateId}")]
+        [HttpPut("{Id}")]
         [Authorize(Roles = "Admin, Manager")]
-        public async Task<IActionResult> Update(int updateId, UpdateBlogPostDTO dto)
+        public async Task<IActionResult> Update(int Id, UpdateBlogPostDTO dto)
         {
-            var post = await _repo.GetByIdAsync(updateId);
-            if (post == null) return NotFound();
-            _mapper.Map(dto, post);
-            var updated = await _repo.UpdateAsync(dto);
+          
+            var updated = await _repo.UpdateAsync(Id, dto);
             return Ok(_mapper.Map<BlogPostDTO>(updated));
         }
 

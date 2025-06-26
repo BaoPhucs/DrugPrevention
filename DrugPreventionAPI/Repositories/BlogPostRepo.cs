@@ -26,9 +26,22 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task DeleteAsync(int id)
         {
+            // 1) Remove any tag links
+            var links = _ctx.BlogTags.Where(bt => bt.BlogPostId == id);
+            _ctx.BlogTags.RemoveRange(links);
+
+            // 2) (Optional) Remove comments too
+            var comments = _ctx.Comments.Where(c => c.BlogPostId == id);
+            _ctx.Comments.RemoveRange(comments);
+
+            // 3) Remove the post itself
             var bp = await _ctx.BlogPosts.FindAsync(id);
-            if (bp != null) { _ctx.BlogPosts.Remove(bp); await _ctx.SaveChangesAsync(); }
+            if (bp != null)
+                _ctx.BlogPosts.Remove(bp);
+
+            await _ctx.SaveChangesAsync();
         }
+
 
         public async Task<IEnumerable<BlogPost>> GetAllAsync()
         => await _ctx.BlogPosts
@@ -43,13 +56,10 @@ namespace DrugPreventionAPI.Repositories
                    .FirstOrDefaultAsync(bp => bp.Id == id);
 
 
-        public async Task<BlogPost> UpdateAsync(UpdateBlogPostDTO dto)
+        public async Task<BlogPost> UpdateAsync(int postId, UpdateBlogPostDTO dto)
         {
             
-            // 1. Parse the post’s key
-            if (!int.TryParse(dto.id, out var postId))
-                throw new ArgumentException($"Invalid post ID");
-
+          
             var post = await _ctx.BlogPosts
          .Include(bp => bp.BlogTags)           // need existing tags
          .FirstOrDefaultAsync(bp => bp.Id == postId);
