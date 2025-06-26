@@ -87,7 +87,7 @@ namespace DrugPreventionAPI.Repositories
                 .ToListAsync();
         }
 
-        public async Task<QuizSubmission> SubmitQuizAsync(int courseId, int memberId, IEnumerable<QuizAnswerDTO> answers)
+        public async Task<QuizSubmission> SubmitQuizAsync(int courseId, int memberId, IEnumerable<QuizAnswerSubmissionDTO> answers)
         {
             // 1) Tạo QuizSubmission
             var submission = new QuizSubmission

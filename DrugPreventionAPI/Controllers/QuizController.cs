@@ -34,7 +34,7 @@ namespace DrugPreventionAPI.Controllers
 
         [HttpPost("submit-answers")]
         [Authorize]
-        public async Task<IActionResult> SubmitQuizAnswers(int courseId, [FromBody] IEnumerable<QuizAnswerDTO> answers)
+        public async Task<IActionResult> SubmitQuizAnswers(int courseId, [FromBody] IEnumerable<QuizAnswerSubmissionDTO> answers)
         {
             if (answers == null || !answers.Any())
             {
