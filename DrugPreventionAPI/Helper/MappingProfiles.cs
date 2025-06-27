@@ -69,9 +69,11 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateSurveyDTO, Survey>();
 
             // SurveyQuestion
+            CreateMap<SurveySubstance, SurveySubstanceDTO>().ReverseMap();
             CreateMap<SurveyQuestion, SurveyQuestionDTO>()
                 .ForMember(dest => dest.Options,
-                           opt => opt.MapFrom(src => src.SurveyOptions.OrderBy(o => o.Sequence)));
+                           opt => opt.MapFrom(src => src.SurveyOptions.OrderBy(o => o.Sequence)))
+                .ForMember(d => d.SubstanceName, o => o.MapFrom(s => s.Substance!.Name));
             CreateMap<CreateSurveyQuestionDTO, SurveyQuestion>();
 
             // SurveyOption

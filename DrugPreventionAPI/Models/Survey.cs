@@ -21,5 +21,7 @@ public partial class Survey
 
     public ICollection<SurveySubmission> SurveySubmissions { get; set; } 
 
-    public ICollection<UserSurvey> UserSurveys { get; set; } 
+    public ICollection<UserSurvey> UserSurveys { get; set; }
+
+    public ICollection<SurveySubstance> SurveySubstances { get; set; }
 }

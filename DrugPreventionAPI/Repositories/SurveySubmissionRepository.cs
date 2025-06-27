@@ -37,30 +37,28 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<IEnumerable<SurveyQuestionDTO>> GetQuestionsForSubmissionAsync(int surveyId)
         {
-            // load questions + options
-            var qs = await _context.SurveyQuestions
-                           .Where(q => q.SurveyId == surveyId)
-                           .Include(q => q.SurveyOptions.OrderBy(o => o.Sequence))
-                           .OrderBy(q => q.Sequence)
-                           .ToListAsync();
-
-            // map manually or via AutoMapper in service/controller
-            // here return domain, mapping in controller
-            return qs.Select(q => new SurveyQuestionDTO
-            {
-                Id = q.Id,
-                Sequence = q.Sequence,
-                QuestionText = q.QuestionText,
-                Options = q.SurveyOptions
-                            .Select(o => new SurveyOptionDTO
-                            {
-                                Id = o.Id,
-                                Sequence = o.Sequence,
-                                OptionText = o.OptionText,
-                                ScoreValue = o.ScoreValue
-                            })
-                            .ToList()
-            });
+            var questions = await (from q in _context.SurveyQuestions
+                                   join s in _context.SurveySubstances on q.SubstanceId equals s.Id
+                                   where q.SurveyId == surveyId
+                                   orderby s.SortOrder, q.Sequence
+                                   select new SurveyQuestionDTO
+                                   {
+                                       Id = q.Id,
+                                       SubstanceId = s.Id,
+                                       SubstanceName = s.Name,
+                                       Sequence = q.Sequence,
+                                       QuestionText = q.QuestionText!,
+                                       Options = q.SurveyOptions
+                                                  .Select(o => new SurveyOptionDTO
+                                                  {
+                                                      Id = o.Id,
+                                                      OptionText = o.OptionText!,
+                                                      ScoreValue = o.ScoreValue
+                                                  })
+                                                  .ToList()
+                                   })
+                              .ToListAsync();
+            return questions;
         }
 
         public async Task<SurveySubmission> SubmitAsync(int surveyId, int memberId, IEnumerable<SurveyAnswerDTO> answers)
@@ -96,6 +94,29 @@ namespace DrugPreventionAPI.Repositories
                 risk = "Unknown";
             }
 
+            // 2) Xác định Recommendation dựa trên survey.Type + risk
+            string rec;
+            if (survey.Type == "ASSIST")
+            {
+                rec = risk switch
+                {
+                    "Low" => "Lời khuyên: Bạn đang ở mức thấp, có thể tiếp tục sử dụng với mức độ hiện tại nhưng nên tự theo dõi. Nguy cơ phát triển lệ thuộc thấp.",
+                    "Medium" => "Gợi ý: Bạn ở mức trung bình, tham khảo thêm thông tin về tác hại và cân nhắc giảm sử dụng. Nguy cơ tổn thương gan, thần kinh và lệ thuộc vừa phải.",
+                    "High" => "Khuyến nghị: Bạn ở mức cao, nên sắp xếp buổi tư vấn chuyên sâu với chuyên gia. Nguy cơ lệ thuộc nặng, tổn thương sức khỏe dài hạn rất cao.",
+                    _ => ""
+                };
+            }
+            else // CRAFTT
+            {
+                rec = risk switch
+                {
+                    "Low" => "Kết quả thấp: Tình hình tốt, tiếp tục duy trì lối sống lành mạnh. Nguy cơ tai nạn hoặc tổn thương sức khỏe rất thấp.",
+                    "Medium" => "Kết quả trung bình: Tìm hiểu nguyên nhân và cách hạn chế. Nguy cơ rối loạn hành vi, tai nạn do ảnh hưởng chất có hại vừa phải.",
+                    "High" => "Kết quả cao: Nên dừng sử dụng để bảo vệ sức khỏe, cân nhắc gặp chuyên gia. Nguy cơ ngộ độc, rối loạn tâm thần và tổn thương cơ quan rất cao.",
+                    _ => ""
+                };
+            }
+
             // lưu
             var sub = new SurveySubmission
             {
@@ -103,6 +124,7 @@ namespace DrugPreventionAPI.Repositories
                 MemberId = memberId,
                 Score = totalScore,
                 RiskLevel = risk,
+                Recommendation = rec,
                 SubmissionDate = DateTime.UtcNow
             };
             _context.SurveySubmissions.Add(sub);

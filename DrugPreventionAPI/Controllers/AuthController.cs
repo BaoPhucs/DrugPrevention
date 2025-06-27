@@ -205,7 +205,8 @@ namespace DrugPreventionAPI.Controllers
             var ok = await _authRepository.ConfirmEmailAsync(token);
             if (!ok) return BadRequest("The authentication link is invalid or has expired.");
 
-            return Ok("Email verification successful! You can log in now.");
+            var loginUrl = $"{Request.Scheme}://localhost:5173/login";
+            return Redirect(loginUrl);
         }
 
         [HttpPost("change-password")]
