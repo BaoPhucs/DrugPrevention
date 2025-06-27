@@ -52,6 +52,8 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<QuizSubmissionAnswer> QuizSubmissionAnswers { get; set; }
 
+    public DbSet<SurveySubstance> SurveySubstances { get; set; }
+
     public virtual DbSet<Survey> Surveys { get; set; }
 
     public virtual DbSet<SurveyOption> SurveyOptions { get; set; }
@@ -362,6 +364,9 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.Member).WithMany(p => p.CourseEnrollments)
                 .HasForeignKey(d => d.MemberId)
                 .HasConstraintName("FK_CourseEnrollment_Member");
+            entity.Property(e => e.QuizAttemptCount)
+                .HasColumnName("QuizAttemptCount")
+                .HasDefaultValue(0);
         });
 
         modelBuilder.Entity<CourseQuestion>(entity =>
@@ -620,6 +625,20 @@ public partial class DataContext : DbContext
                 .HasConstraintName("FK_QSA_Submission");
         });
 
+        modelBuilder.Entity<SurveySubstance>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Name).HasMaxLength(200).IsUnicode();
+            entity.HasOne(x => x.Survey)
+             .WithMany(s => s.SurveySubstances)
+             .HasForeignKey(x => x.SurveyId);
+
+            entity.HasMany(x => x.Questions)
+             .WithOne(q => q.Substance)
+             .HasForeignKey(q => q.SubstanceId);
+        });
+
+
         modelBuilder.Entity<Survey>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Survey__3214EC274D9D4BF3");
@@ -679,6 +698,9 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.Survey).WithMany(p => p.SurveyQuestions)
                 .HasForeignKey(d => d.SurveyId)
                 .HasConstraintName("FK_SurveyQuestion_Survey");
+            entity.HasOne(q => q.Substance)
+                  .WithMany(s => s.Questions)
+                  .HasForeignKey(q => q.SubstanceId);
         });
 
         modelBuilder.Entity<SurveySubmission>(entity =>
@@ -697,7 +719,9 @@ public partial class DataContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.SurveyId).HasColumnName("SurveyID");
-
+            entity.Property(e => e.Recommendation)
+                .HasColumnName("Recommendation")
+                .HasColumnType("nvarchar(max)");
             entity.HasOne(d => d.Member).WithMany(p => p.SurveySubmissions)
                 .HasForeignKey(d => d.MemberId)
                 .HasConstraintName("FK_SurveySubmission_Member");

@@ -92,7 +92,15 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<QuizSubmission> SubmitQuizAsync(int courseId, int memberId, IEnumerable<QuizAnswerSubmissionDTO> answers)
         {
-            // 1) Tạo QuizSubmission
+            // --- 0) Lấy enrollment để kiểm tra số lần làm quiz ---
+            var enroll = await _context.CourseEnrollments
+                .FirstOrDefaultAsync(e => e.CourseId == courseId && e.MemberId == memberId);
+            if (enroll == null)
+                throw new InvalidOperationException("Bạn chưa đăng ký khóa học này");
+            if (enroll.QuizAttemptCount >= 3)
+                throw new InvalidOperationException("Bạn đã hết số lần làm quiz cho khóa học này");
+
+            // --- 1) Tạo QuizSubmission ---
             var submission = new QuizSubmission
             {
                 CourseId = courseId,
@@ -102,11 +110,10 @@ namespace DrugPreventionAPI.Repositories
             _context.QuizSubmissions.Add(submission);
             await _context.SaveChangesAsync(); // để có submission.Id
 
-            // 2) Lưu từng answer và tính score
+            // --- 2) Lưu từng answer và tính score ---
             int score = 0;
             foreach (var a in answers)
             {
-                // Lưu detail
                 _context.QuizSubmissionAnswers.Add(new QuizSubmissionAnswer
                 {
                     SubmissionId = submission.Id,
@@ -114,7 +121,6 @@ namespace DrugPreventionAPI.Repositories
                     OptionId = a.OptionId
                 });
 
-                // Kiểm tra đúng/sai: nếu option.ScoreValue > 0 thì +1
                 var opt = await _context.QuestionOptions
                     .AsNoTracking()
                     .FirstOrDefaultAsync(o => o.Id == a.OptionId && o.QuestionId == a.QuestionId);
@@ -122,29 +128,28 @@ namespace DrugPreventionAPI.Repositories
                     score++;
             }
 
-            // 3) Cập nhật score & passedStatus
+            // --- 3) Cập nhật score & passedStatus ---
             submission.Score = score;
             submission.PassedStatus = score >= (await _context.Courses
-                                                    .Where(c => c.Id == courseId)
-                                                    .Select(c => c.PassingScore)
-                                                    .FirstAsync() ?? 0);
+                .Where(c => c.Id == courseId)
+                .Select(c => c.PassingScore)
+                .FirstAsync());
 
+            // --- 4) Tăng số lần làm quiz ---
+            enroll.QuizAttemptCount++;
+            _context.CourseEnrollments.Update(enroll);
+
+            // --- 5) Lưu tất cả thay đổi (score, passedStatus, attemptCount, answers) ---
             await _context.SaveChangesAsync();
 
-            // 4) Nếu pass, cập nhật CourseEnrollment.Status
+            // --- 6) Nếu pass, cập nhật enrollment.Status và tạo certificate ---
             if (submission.PassedStatus == true)
             {
-                // 1) cập nhật enrollment
-                var enroll = await _context.CourseEnrollments
-                    .FirstOrDefaultAsync(e => e.CourseId == courseId && e.MemberId == memberId);
-                if (enroll != null)
-                {
-                    enroll.Status = "Completed";
-                    await _context.SaveChangesAsync();
-                }
+                enroll.Status = "Completed";
+                _context.CourseEnrollments.Update(enroll);
 
-                // 2) Tạo certificate
-                var certNo = $"CERT-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+                // Tạo certificate
+                var certNo = $"CERT-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid():N}".Substring(0, 20).ToUpper();
                 var certificate = new Certificate
                 {
                     MemberId = memberId,
@@ -153,6 +158,8 @@ namespace DrugPreventionAPI.Repositories
                     IssuedDate = DateTime.UtcNow
                 };
                 await _certRepo.CreateAsync(certificate);
+
+                await _context.SaveChangesAsync();
             }
 
             return submission;
