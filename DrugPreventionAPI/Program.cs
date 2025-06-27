@@ -117,7 +117,8 @@ namespace DrugPreventionAPI
                 options.AddPolicy("AllowFrontend", policy =>
                 {
                     policy
-                      .WithOrigins("http://localhost:5173/")   // hoặc .AllowAnyOrigin() khi dev
+                      //.WithOrigins("http://localhost:5173/")   // hoặc .AllowAnyOrigin() khi dev
+                      .AllowAnyOrigin()
                       .AllowAnyMethod()
                       .WithHeaders("Content-Type", "Authorization"); // <-- thêm Authorization ở đây
                 });

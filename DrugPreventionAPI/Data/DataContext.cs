@@ -52,7 +52,7 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<QuizSubmissionAnswer> QuizSubmissionAnswers { get; set; }
 
-    public DbSet<SurveySubstance> SurveySubstances { get; set; }
+    public virtual DbSet<SurveySubstance> SurveySubstances { get; set; }
 
     public virtual DbSet<Survey> Surveys { get; set; }
 
@@ -627,15 +627,14 @@ public partial class DataContext : DbContext
 
         modelBuilder.Entity<SurveySubstance>(entity =>
         {
-            entity.HasKey(x => x.Id);
-            entity.Property(x => x.Name).HasMaxLength(200).IsUnicode();
-            entity.HasOne(x => x.Survey)
-             .WithMany(s => s.SurveySubstances)
-             .HasForeignKey(x => x.SurveyId);
-
-            entity.HasMany(x => x.Questions)
-             .WithOne(q => q.Substance)
-             .HasForeignKey(q => q.SubstanceId);
+            entity.ToTable("SurveySubstance");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsUnicode(false).HasMaxLength(200);
+            entity.Property(e => e.SortOrder).IsRequired();
+            entity.HasOne(e => e.Survey)
+                  .WithMany(s => s.SurveySubstances)
+                  .HasForeignKey(e => e.SurveyId)
+                  .HasConstraintName("FK_SurveySubstance_Survey");
         });
 
 
