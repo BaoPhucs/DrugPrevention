@@ -86,7 +86,7 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<bool> UpdateQuestionAsync(SurveyQuestion question)
         {
-            var ex = await _context.SurveyQuestions.FindAsync(q.Id);
+            var ex = await _context.SurveyQuestions.FindAsync(question.Id);
             if (ex == null) return false;
             ex.QuestionText = question.QuestionText;
             ex.Sequence = question.Sequence;

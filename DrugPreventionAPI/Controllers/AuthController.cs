@@ -95,11 +95,11 @@ namespace DrugPreventionAPI.Controllers
             // 1) Tạo danh sách claims
             var claims = new[]
             {
-        new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email),
-        new Claim(ClaimTypes.Role,               user.Role ?? "Member"),
-        new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString())
-    };
+                new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(ClaimTypes.Role,               user.Role ?? "Member"),
+                new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString())
+            };
 
             // 2) Lấy config và ký token
             var jwtSettings = _configuration.GetSection("Jwt");
@@ -182,7 +182,7 @@ namespace DrugPreventionAPI.Controllers
             // Gửi email xác thực
             var confirmUrl = $"{Request.Scheme}://{Request.Host}/api/auth/confirm-email?token={token}";
             var html = $@"
-                <p>Hello {user.Name},</p>
+                <p>Hello {user.Name},</p>    
                 <p>Please click <a href=""{confirmUrl}"">here</a> to verify your email.</p>
                 <p>This link is valid for 24 hours.</p>";
 
