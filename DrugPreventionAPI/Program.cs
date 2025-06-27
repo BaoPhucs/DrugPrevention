@@ -44,7 +44,7 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IConsultantScheduleRepository, ConsultantScheduleRepository>();
             builder.Services.AddScoped<IBlogPostRepo, BlogPostRepo>();
             builder.Services.AddScoped<ITagRepo, TagRepo>();
-
+            builder.Services.AddScoped<ICommentRepo, CommentRepo>();
             // Email service
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();

@@ -45,21 +45,24 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<IEnumerable<BlogPost>> GetAllAsync()
         => await _ctx.BlogPosts
-                     .Include(bp => bp.BlogTags)
-                        .ThenInclude(bt => bt.Tag)
+                     .Include(bp => bp.BlogTags).ThenInclude(bt => bt.Tag)
+                     .Include(bp => bp.Comments).ThenInclude(c => c.Replies)
+
                      .ToListAsync();
 
         public async Task<BlogPost?> GetByIdAsync(int id)
       => await _ctx.BlogPosts
                    .Include(bp => bp.BlogTags)
                       .ThenInclude(bt => bt.Tag)
+                     .Include(bp => bp.Comments).ThenInclude(c => c.Replies)
+
                    .FirstOrDefaultAsync(bp => bp.Id == id);
 
 
         public async Task<BlogPost> UpdateAsync(int postId, UpdateBlogPostDTO dto)
         {
-            
-          
+
+
             var post = await _ctx.BlogPosts
          .Include(bp => bp.BlogTags)           // need existing tags
          .FirstOrDefaultAsync(bp => bp.Id == postId);
@@ -86,6 +89,6 @@ namespace DrugPreventionAPI.Repositories
             return post;
         }
 
-      
+
     }
 }

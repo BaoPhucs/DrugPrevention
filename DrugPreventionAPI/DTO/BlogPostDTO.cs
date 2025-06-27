@@ -10,6 +10,8 @@
         public DateTime UpdatedDate { get; set; }
         public int? CreatedById { get; set; }
         public IEnumerable<TagDTO> Tags { get; set; } = Array.Empty<TagDTO>();
+        public IEnumerable<CommentDTO>? Comments { get; set; }
+
 
     }
 }

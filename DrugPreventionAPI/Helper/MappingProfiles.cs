@@ -99,6 +99,24 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateUserInquiryDTO, UserInquiry>()
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
+            // Map entity -> DTO
+            CreateMap<Comment, CommentDTO>();
+
+            // Map create-DTO -> entity
+            CreateMap<CreateCommentDTO, Comment>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+            // Map update-DTO -> entity (patch existing)
+            CreateMap<UpdateCommentDTO, Comment>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+            // Extend existing mappings:
+            CreateMap<BlogPost, BlogPostDTO>()
+                .ForMember(d => d.Tags, o => o.MapFrom(s => s.BlogTags.Select(bt => bt.Tag)))
+                .ForMember(d => d.Comments, o => o.MapFrom(s => s.Comments));
+
         }
     }
 }
