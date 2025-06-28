@@ -93,5 +93,93 @@ namespace DrugPreventionAPI.Repositories
             }
             return await _context.SaveChangesAsync() > 0;
         }
+
+        public async Task<bool> MarkNoShowAsync(int requestId, string? reason = null)
+        {
+            var req = await _context.AppointmentRequests
+                        .Include(r => r.Schedule)
+                        .Include(r => r.Member)
+                        .FirstOrDefaultAsync(r => r.Id == requestId);
+            if (req == null) return false;
+
+            req.Status = "NoShow";
+            req.CancelReason = reason;
+            req.NoShowDate = DateTime.UtcNow;
+            req.NoShowCount += 1;
+
+            // Tăng tổng NoShow trên user (nếu dùng)
+            if (req.Member != null)
+                req.Member.NoShowTotal += 1;
+
+            // Đếm NoShow trong 30 ngày qua
+            var cutoff = DateTime.UtcNow.AddDays(-30);
+            var recentNoShows = await _context.AppointmentRequests
+                .CountAsync(r =>
+                    r.MemberId == req.MemberId
+                    && r.Status == "NoShow"
+                    && r.NoShowDate >= cutoff);
+
+            // Nếu >=3 lần, khoá account 7 ngày
+            if (recentNoShows >= 3 && req.Member != null)
+            {
+                //req.Member.LockoutEnd = DateTime.UtcNow.AddDays(7);
+                req.Member.LockoutEnd = DateTime.UtcNow.AddMinutes(1); // Giả lập khoá 1 phút để test
+
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<IEnumerable<AppointmentRequest>> GetConfirmedAppointmentsForReminderAsync(TimeSpan leadTime)
+        {
+            var now = DateTime.UtcNow;
+            var target = now.Add(leadTime);
+
+            // Mở rộng ±5 phút để tránh bỏ sót
+            var windowStart = target.AddMinutes(-5);
+            var windowEnd = target.AddMinutes(+5);
+
+            // Danh sách userId đã từng nhận reminder
+            var alreadySent = await _context.Notifications
+                .Where(n => n.Type == "AppointmentReminder")
+                .Select(n => n.UserId)
+                .ToListAsync();
+
+            // 1) Lọc sơ bộ theo ngày
+            var dateMin = DateOnly.FromDateTime(windowStart);
+            var dateMax = DateOnly.FromDateTime(windowEnd);
+
+            var prelim = await _context.AppointmentRequests
+                .Include(a => a.Member)
+                .Include(a => a.Schedule)
+                .Where(a =>
+                    a.Status == "Confirmed"
+                    && a.Schedule != null
+                    && a.Schedule.ScheduleDate.HasValue
+                    && a.Schedule.ScheduleDate.Value >= dateMin
+                    && a.Schedule.ScheduleDate.Value <= dateMax
+                    && a.MemberId.HasValue
+                    && !alreadySent.Contains(a.MemberId.Value)
+                )
+                .ToListAsync();
+
+            // 2) Chuyển sang DateTime và lọc tiếp theo giờ
+            var result = new List<AppointmentRequest>();
+            foreach (var appt in prelim)
+            {
+                var sd = appt.Schedule.ScheduleDate!.Value;
+                var st = appt.Schedule.StartTime!.Value;
+                // ghép DateOnly + TimeOnly => DateTime
+                var dt = sd.ToDateTime(st);
+
+                if (dt >= windowStart && dt <= windowEnd)
+                {
+                    result.Add(appt);
+                }
+            }
+
+            return result;
+        }
     }
 }

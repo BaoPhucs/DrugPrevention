@@ -25,5 +25,8 @@ namespace DrugPreventionAPI.Interfaces
         Task<bool> SubmitToManagerAsync(int courseId, int userId);
 
         Task<bool> SchedulePublishAsync(int courseId, DateTime publishAt);
+
+        Task<bool> PublishIfDueAsync(int courseId);
+        Task<int> PublishAllDueAsync();
     }
 }

@@ -53,7 +53,7 @@ namespace DrugPreventionAPI.Controllers
 
             var user = await _authRepository.LoginAsync(loginRequest.Email, loginRequest.Password);
             if (user == null)
-                return Unauthorized("Invalid email or password");
+                return Unauthorized("Invalid credentials or account is locked.");
 
             // 1) Chuẩn bị các claim
             var claims = new[]
@@ -244,7 +244,7 @@ namespace DrugPreventionAPI.Controllers
                 Content = html
             };
         }
-        
+
 
         [HttpPost("confirm-email")]
         [AllowAnonymous]

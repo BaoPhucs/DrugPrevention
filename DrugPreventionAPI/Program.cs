@@ -13,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using FirebaseAdmin.Auth;
+using DrugPreventionAPI.Services;
 
 namespace DrugPreventionAPI
 {
@@ -49,10 +50,13 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IConsultantScheduleRepository, ConsultantScheduleRepository>();
             builder.Services.AddScoped<ICertificateRepository, CertificateRepository>();
             builder.Services.AddScoped<ISurveySubstanceRepository, SurveySubstanceRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             // Email service
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();
 
+            builder.Services.AddHostedService<ScheduledPublisher>();
+            builder.Services.AddHostedService<ScheduledTasksService>();
             // AutoMapper
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -129,7 +133,7 @@ namespace DrugPreventionAPI
                 });
             });
 
-            var firebaseCred = GoogleCredential.FromFile("App/drugprevention-firebase-adminsdk-fbsvc-190504c11a.json");
+            var firebaseCred = GoogleCredential.FromFile("App/drugprevention-firebase-adminsdk-fbsvc-1df4b3aadb.json");
             FirebaseApp.Create(new AppOptions { Credential = firebaseCred });
             builder.Services.AddSingleton<FirebaseAuth>(sp =>
                 FirebaseAuth.GetAuth(FirebaseApp.DefaultInstance));
@@ -146,7 +150,7 @@ namespace DrugPreventionAPI
                 });
             }
             app.UseRouting();
-            
+
             app.UseCors("AllowFrontend");
             app.UseHttpsRedirection();
 

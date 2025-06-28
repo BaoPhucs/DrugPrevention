@@ -14,10 +14,16 @@ namespace DrugPreventionAPI.Controllers
     {
         private readonly IAppointmentRequestRepository _appointmentRequestRepository;
         private readonly IMapper _mapper;
-        public AppointmentRequestController(IAppointmentRequestRepository appointmentRequestRepository, IMapper mapper)
+        private readonly IEmailService _emailService;
+        private readonly INotificationRepository _noteRepo;
+        private readonly IConsultantScheduleRepository _consultantScheduleRepository;
+        public AppointmentRequestController(IAppointmentRequestRepository appointmentRequestRepository, IMapper mapper, IEmailService emailService, INotificationRepository noteRepo, IConsultantScheduleRepository consultantScheduleRepository)
         {
             _appointmentRequestRepository = appointmentRequestRepository;
             _mapper = mapper;
+            _emailService = emailService;
+            _noteRepo = noteRepo;
+            _consultantScheduleRepository = consultantScheduleRepository;
         }
 
         private int CurrentUserId =>
@@ -27,6 +33,20 @@ namespace DrugPreventionAPI.Controllers
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> Create([FromBody] CreateAppointmentRequestDTO dto)
         {
+            // 1) Lấy slot từ repository
+            var slot = await _consultantScheduleRepository.GetScheduleById(dto.ScheduleId);
+            if (slot == null || slot.ScheduleDate == null || slot.StartTime == null)
+                return BadRequest("Khung giờ không hợp lệ.");
+
+            // 2) Ghép DateOnly + TimeOnly => DateTime
+            var appointmentDateTime = slot.ScheduleDate.Value
+                                          .ToDateTime(slot.StartTime.Value);
+
+            // 3) Kiểm tra đặt trước 24h
+            if (appointmentDateTime <= DateTime.UtcNow.AddHours(12))
+                return BadRequest("Bạn phải đặt lịch ít nhất 12 giờ trước khi cuộc hẹn.");
+
+            // 4) Tiếp tục tạo request
             var req = new AppointmentRequest
             {
                 MemberId = CurrentUserId,
@@ -35,7 +55,6 @@ namespace DrugPreventionAPI.Controllers
                 Status = "Pending"
             };
             var created = await _appointmentRequestRepository.CreateAsync(req);
-            // Map sang DTO để không include navigation
             var resultDto = _mapper.Map<AppointmentRequestDTO>(created);
             return CreatedAtAction(nameof(GetById), new { id = resultDto.Id }, resultDto);
         }
@@ -96,6 +115,45 @@ namespace DrugPreventionAPI.Controllers
             var success = await _appointmentRequestRepository.DeleteAsync(requestId);
             if (!success) return StatusCode(500, "Không thể huỷ request này.");
             return NoContent(); // 204
+        }
+
+        // 11) Consultant đánh dấu No Show
+        [HttpPut("{id:int}/noshow")]
+        [Authorize(Roles = "Consultant,Manager")]
+        public async Task<IActionResult> MarkNoShow(int id, [FromBody] NoShowDTO dto)
+        {
+            var ok = await _appointmentRequestRepository.MarkNoShowAsync(id, dto.Reason);
+            if (!ok) return NotFound();
+
+            // Lấy lại request để có email, userId
+            var req = await _appointmentRequestRepository.GetByIdAsync(id);
+            var userEmail = req.Member.Email;
+            var userId = req.MemberId;
+
+            // Tạo Notification record
+            var note = new Notification
+            {
+                UserId = userId,
+                Type = "NoShowWarning",
+                Title = "Cảnh báo: Không đến cuộc hẹn",
+                Message = $"Bạn đã không đến cuộc hẹn {req.Schedule.ScheduleDate:dd/MM/yyyy}. " +
+                           $"Lần này được đánh dấu No-Show.",
+                SendDate = DateTime.UtcNow
+            };
+            await _noteRepo.CreateAsync(note);
+
+            // Gửi email
+            var html = $@"
+            <p>Xin chào {req.Member.Name},</p>
+            <p>Bạn đã không tham dự cuộc hẹn tư vấn vào ngày " +
+                $"<strong>{req.Schedule.ScheduleDate:dd/MM/yyyy}</strong>.</p>" +
+                "<p>Vui lòng chú ý thời gian hoặc liên hệ lại để đặt lịch mới.</p>";
+            await _emailService.SendEmailAsync(
+                userEmail,
+                "Cảnh báo: Bạn không đến cuộc hẹn tư vấn",
+                html);
+
+            return NoContent();
         }
     }
 }
