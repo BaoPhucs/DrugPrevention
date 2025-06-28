@@ -48,7 +48,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("availability/{isAvailable:bool}")]
-        [Authorize("Consultant")]
+        [Authorize(Roles = "Consultant")]
         public async Task<IActionResult> GetByAvailability(bool isAvailable)
         {
             var list = await _consultantScheduleRepository.GetByIsAvailabilityAsync(isAvailable);

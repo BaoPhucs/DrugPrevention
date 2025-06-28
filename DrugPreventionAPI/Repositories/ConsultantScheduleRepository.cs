@@ -68,5 +68,29 @@ namespace DrugPreventionAPI.Repositories
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<int> DisableSlotsExpiringWithinAsync(TimeSpan within)
+        {
+            var now = DateTime.UtcNow;
+            var cutoff = now.Add(within);
+
+            // Select những slot đang mở, mà startDateTime ≤ cutoff và > now
+            var toDisable = await _context.ConsultantSchedules
+                .Where(s => s.IsAvailable == true
+                         && s.ScheduleDate.HasValue
+                         && s.StartTime.HasValue
+                         // build DateTime from DateOnly + TimeOnly
+                         && (s.ScheduleDate.Value.ToDateTime(s.StartTime.Value) <= cutoff)
+                         && (s.ScheduleDate.Value.ToDateTime(s.StartTime.Value) > now)
+                      )
+                .ToListAsync();
+
+            foreach (var slot in toDisable)
+            {
+                slot.IsAvailable = false;
+            }
+            await _context.SaveChangesAsync();
+            return toDisable.Count;
+        }
     }
 }
