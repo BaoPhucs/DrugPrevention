@@ -362,4 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# Firebase Admin SDK JSON key file
 /DrugPreventionAPI/App/drugprevention-firebase-adminsdk-fbsvc-190504c11a.json
