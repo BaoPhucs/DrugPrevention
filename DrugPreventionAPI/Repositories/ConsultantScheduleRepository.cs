@@ -43,6 +43,20 @@ namespace DrugPreventionAPI.Repositories
                      .ToListAsync();
         }
 
+        public async Task<IEnumerable<User>> GetConsultant()
+        {
+            return await _context.Users
+                     .Where(u => u.Role == "Consultant")
+                     .ToListAsync();
+        }
+
+        public async Task<ConsultantSchedule> GetScheduleById(int scheduleId)
+        {
+            return await _context.ConsultantSchedules
+                .Where(s => s.Id == scheduleId)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<bool> UpdateAsync(ConsultantSchedule slot)
         {
             var existing = await _context.ConsultantSchedules.FindAsync(slot.Id);

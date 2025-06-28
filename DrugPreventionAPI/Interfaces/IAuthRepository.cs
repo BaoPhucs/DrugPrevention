@@ -11,7 +11,7 @@ namespace DrugPreventionAPI.Interfaces
         Task<bool> ResetPasswordAsync(string email); // Resets the password for a user by email
         string GenerateRandomPassword(int length);
         Task<bool> UpdatePasswordAsync(string email, string newPassword);
-        Task<string> GenerateEmailVerificationTokenAsync(string email);
-        Task<bool> ConfirmEmailAsync(string token);
+        Task<string> GenerateEmailVerificationLinkAsync(string email);
+        Task<bool> ConfirmEmailAsync(string oobCode);
     }
 }
