@@ -133,6 +133,8 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.Schedule).WithMany(p => p.AppointmentRequests)
                 .HasForeignKey(d => d.ScheduleId)
                 .HasConstraintName("FK_AppointmentRequest_Schedule");
+            entity.Property(e => e.NoShowCount).HasDefaultValue(0);
+            entity.Property(e => e.NoShowDate).HasColumnType("datetime").HasDefaultValueSql("NULL");
         });
 
         modelBuilder.Entity<BlogPost>(entity =>
@@ -805,6 +807,8 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.LockoutEnd).HasColumnType("datetime");
+            entity.Property(e => e.NoShowTotal).HasDefaultValue(0);
         });
 
         modelBuilder.Entity<UserInquiry>(entity =>

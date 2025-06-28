@@ -11,5 +11,7 @@ namespace DrugPreventionAPI.Interfaces
         Task<ConsultantSchedule> AddAsync(ConsultantSchedule slot);
         Task<bool> UpdateAsync(ConsultantSchedule slot);
         Task<bool> DeleteAsync(int slotId);
+
+        Task<int> DisableSlotsExpiringWithinAsync(TimeSpan within);
     }
 }

@@ -21,9 +21,13 @@ public partial class AppointmentRequest
 
     public string? CancelReason { get; set; }
 
+    public int? NoShowCount { get; set; }
+
+    public DateTime? NoShowDate { get; set; }
+
     public User? Consultant { get; set; }
 
-    public virtual ICollection<ConsultationNote> ConsultationNotes { get; set; } 
+    public virtual ICollection<ConsultationNote> ConsultationNotes { get; set; }
 
     public User? Member { get; set; }
 

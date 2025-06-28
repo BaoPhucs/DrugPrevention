@@ -11,5 +11,8 @@ namespace DrugPreventionAPI.Interfaces
         Task<bool> UpdateStatusAsync(int requestId, string status, string? cancelReason = null);
         Task<bool> DeleteAsync(int requestId); // cho phép member huỷ hẳn request trước khi consultant confirm
         Task<IEnumerable<AppointmentRequest>> GetAllAsync(); // (tuỳ nếu admin/manager cần xem tổng thể)
+
+        Task<bool> MarkNoShowAsync(int requestId, string? reason = null);
+        Task<IEnumerable<AppointmentRequest>> GetConfirmedAppointmentsForReminderAsync(TimeSpan leadTime);
     }
 }

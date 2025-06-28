@@ -35,6 +35,11 @@ namespace DrugPreventionAPI.Repositories
             {
                 return null; // Authentication failed
             }
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                Console.WriteLine("User is locked out until " + user.LockoutEnd.Value);
+                return null; // User is locked out
+            }
 
             return user; // Authentication successful
         }
@@ -92,7 +97,7 @@ namespace DrugPreventionAPI.Repositories
             catch (InvalidJwtException ex)
             {
                 Console.WriteLine($"Invalid JWT: {ex.Message}");
-                return null; 
+                return null;
             }
             catch (Exception ex)
             {
