@@ -27,7 +27,7 @@ namespace DrugPreventionAPI.Services
         public override Task StartAsync(CancellationToken cancellationToken)
         {
             // Chạy lần đầu sau 1 phút, sau đó cứ 5 phút chạy tiếp
-            _timer = new Timer(DoWork, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
+            _timer = new Timer(DoWork, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
             return Task.CompletedTask;
         }
 
@@ -36,10 +36,19 @@ namespace DrugPreventionAPI.Services
             try
             {
                 using var scope = _scopeFactory.CreateScope();
+                var scheduleRepo = scope.ServiceProvider.GetRequiredService<IConsultantScheduleRepository>();
                 var courseRepo = scope.ServiceProvider.GetRequiredService<ICourseRepository>();
                 var apptRepo = scope.ServiceProvider.GetRequiredService<IAppointmentRequestRepository>();
                 var emailSvc = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 var notifRepo = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
+
+                // 0) Disable tất cả slot <= 24h tới
+                var closedCount = scheduleRepo
+                    .DisableSlotsExpiringWithinAsync(TimeSpan.FromHours(24))
+                    .GetAwaiter().GetResult();
+                if (closedCount > 0)
+                    _logger.LogInformation($"Disabled {closedCount} slots expiring within 24h at {DateTime.UtcNow}.");
+
 
                 // 1) Publish all due courses
                 var publishedCount = courseRepo.PublishAllDueAsync().GetAwaiter().GetResult();

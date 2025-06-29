@@ -6,5 +6,6 @@ namespace DrugPreventionAPI.Interfaces
     {
         Task<IEnumerable<ConsultationNote>> GetByAppointmentAsync(int appointmentId);
         Task<ConsultationNote> AddAsync(ConsultationNote note);
+        Task<bool> UpdateNoteAssync(int id, string notes);
     }
 }
