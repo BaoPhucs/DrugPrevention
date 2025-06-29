@@ -22,6 +22,8 @@
 
         public bool? EmailVerified { get; set; }
 
+        public int NoShowTotal { get; set; }
+
         public DateTime? CreatedDate { get; set; }
 
     }

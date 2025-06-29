@@ -25,5 +25,19 @@ namespace DrugPreventionAPI.Repositories
                      .Where(n => n.AppointmentId == appointmentId)
                      .ToListAsync();
         }
+
+        public async Task<bool> UpdateNoteAssync(int id, string notes)
+        {
+            var note = await _context.ConsultationNotes
+                                     .FirstOrDefaultAsync(n => n.Id == id);
+            if (note == null) return false;
+
+            note.Notes = notes;
+            // nếu cần cập nhật thêm timestamp:
+            // note.UpdatedDate = DateTime.UtcNow;
+
+            return await _context.SaveChangesAsync() > 0;
+        }
+
     }
 }

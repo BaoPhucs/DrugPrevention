@@ -74,14 +74,28 @@ namespace DrugPreventionAPI.Repositories
             var now = DateTime.UtcNow;
             var cutoff = now.Add(within);
 
-            // Select những slot đang mở, mà startDateTime ≤ cutoff và > now
+            // tách DateOnly/TimeOnly để so sánh
+            var nowDate = DateOnly.FromDateTime(now);
+            var nowTime = TimeOnly.FromDateTime(now);
+            var cutDate = DateOnly.FromDateTime(cutoff);
+            var cutTime = TimeOnly.FromDateTime(cutoff);
+
             var toDisable = await _context.ConsultantSchedules
                 .Where(s => s.IsAvailable == true
                          && s.ScheduleDate.HasValue
                          && s.StartTime.HasValue
-                         // build DateTime from DateOnly + TimeOnly
-                         && (s.ScheduleDate.Value.ToDateTime(s.StartTime.Value) <= cutoff)
-                         && (s.ScheduleDate.Value.ToDateTime(s.StartTime.Value) > now)
+
+                         // phải > now
+                         && (
+                               s.ScheduleDate > nowDate
+                            || (s.ScheduleDate == nowDate && s.StartTime > nowTime)
+                            )
+
+                         // và ≤ cutoff
+                         && (
+                               s.ScheduleDate < cutDate
+                            || (s.ScheduleDate == cutDate && s.StartTime <= cutTime)
+                            )
                       )
                 .ToListAsync();
 
@@ -89,6 +103,7 @@ namespace DrugPreventionAPI.Repositories
             {
                 slot.IsAvailable = false;
             }
+
             await _context.SaveChangesAsync();
             return toDisable.Count;
         }

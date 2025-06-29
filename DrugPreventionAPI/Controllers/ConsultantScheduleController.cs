@@ -32,14 +32,14 @@ namespace DrugPreventionAPI.Controllers
 
         [HttpGet("get-all-consultant")]
         [Authorize]
-        public async Task<IActionResult> GetAllSchedules()
+        public async Task<IActionResult> GetConsutant()
         {
             var list = await _consultantScheduleRepository.GetConsultant();
             return Ok(_mapper.Map<IEnumerable<UserDTO>>(list));
         }
 
         [HttpGet("get-schedule/{scheduleId}")]
-        [AllowAnonymous]
+        [Authorize]
         public async Task<IActionResult> GetById(int scheduleId)
         {
             var schedule = await _consultantScheduleRepository.GetScheduleById(scheduleId);
@@ -48,7 +48,8 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("availability/{isAvailable:bool}")]
-        [Authorize(Roles = "Consultant")]
+        //[Authorize(Roles = "Consultant")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetByAvailability(bool isAvailable)
         {
             var list = await _consultantScheduleRepository.GetByIsAvailabilityAsync(isAvailable);

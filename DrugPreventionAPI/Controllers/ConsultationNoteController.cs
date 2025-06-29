@@ -2,6 +2,7 @@
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
+using DrugPreventionAPI.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -45,6 +46,20 @@ namespace DrugPreventionAPI.Controllers
             var created = await _consultationNoteRepository.AddAsync(note);
             return CreatedAtAction(nameof(GetAll),
                 new { appointmentId }, created);
+        }
+
+        [HttpPut("update-note/{noteId}")]
+        [Authorize(Roles = "Consultant")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateConsultationNoteDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Notes))
+                return BadRequest("Notes cannot be empty.");
+
+            var ok = await _consultationNoteRepository.UpdateNoteAssync(id, dto.Notes);
+            if (!ok)
+                return NotFound($"ConsultationNote with ID {id} not found.");
+
+            return NoContent();
         }
 
     }
