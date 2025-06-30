@@ -30,7 +30,25 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<IEnumerable<ConsultantScheduleDTO>>(list));
         }
 
+        [HttpGet("get-all-consultant")]
+        [Authorize]
+        public async Task<IActionResult> GetConsutant()
+        {
+            var list = await _consultantScheduleRepository.GetConsultant();
+            return Ok(_mapper.Map<IEnumerable<UserDTO>>(list));
+        }
+
+        [HttpGet("get-schedule/{scheduleId}")]
+        [Authorize]
+        public async Task<IActionResult> GetById(int scheduleId)
+        {
+            var schedule = await _consultantScheduleRepository.GetScheduleById(scheduleId);
+            if (schedule == null) return NotFound();
+            return Ok(_mapper.Map<ConsultantScheduleDTO>(schedule));
+        }
+
         [HttpGet("availability/{isAvailable:bool}")]
+        //[Authorize(Roles = "Consultant")]
         [AllowAnonymous]
         public async Task<IActionResult> GetByAvailability(bool isAvailable)
         {

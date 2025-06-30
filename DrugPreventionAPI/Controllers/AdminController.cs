@@ -20,7 +20,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("get-users")]
-        [Authorize(Roles = "Admin, Manager")] // phân quyền cho API, cho roles
+        [Authorize(Roles = "Admin, Manager, Consultant")] // phân quyền cho API, cho roles
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _adminRepository.GetAllUserAsync();
@@ -33,7 +33,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("get-user/{userId}")]
-        [Authorize(Roles = "Admin, Manager")]
+        [Authorize(Roles = "Admin, Manager, Consultant")]
         public async Task<IActionResult> GetUserById(int userId)
         {
             var user = await _adminRepository.GetByIdAsync(userId);
@@ -46,7 +46,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("get-userProfile/{email}")]
-        [Authorize(Roles = "Admin, Manager")]
+        [Authorize(Roles = "Admin, Manager, Consultant")]
         public async Task<IActionResult> GetUserProfile(string email)
         {
             var user = await _adminRepository.GetProfileAsync(email);
@@ -72,7 +72,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("assign-role/{userId}")]
-        [Authorize(Roles = "Admin, Manager")] // Chỉ cho phép người dùng có vai trò admin hoặc manager gán vai trò
+        [Authorize(Roles = "Admin")] // Chỉ cho phép người dùng có vai trò admin hoặc manager gán vai trò
         public async Task<IActionResult> AssignRole(int userId, [FromBody] string role)
         {
             if (string.IsNullOrWhiteSpace(role))

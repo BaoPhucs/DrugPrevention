@@ -10,6 +10,10 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using FirebaseAdmin.Auth;
+using DrugPreventionAPI.Services;
 
 namespace DrugPreventionAPI
 {
@@ -23,6 +27,8 @@ namespace DrugPreventionAPI
             builder.Services.AddDbContext<DataContext>(options =>
                 options.UseSqlServer(builder.Configuration
                     .GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddHttpClient();
 
             // 2. Đăng ký các Service/Repository
             builder.Services.AddScoped<IInquiryAssignmentRepository, InquiryAssignmentRepository>();
@@ -49,10 +55,14 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<ICommentRepo, CommentRepo>();
             builder.Services.AddScoped<ITagRepo, TagRepo>();
 
+            builder.Services.AddScoped<ISurveySubstanceRepository, SurveySubstanceRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             // Email service
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();
 
+            builder.Services.AddHostedService<ScheduledPublisher>();
+            builder.Services.AddHostedService<ScheduledTasksService>();
             // AutoMapper
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -129,6 +139,11 @@ namespace DrugPreventionAPI
                 });
             });
 
+            var firebaseCred = GoogleCredential.FromFile("App/drugprevention-firebase-adminsdk-fbsvc-1df4b3aadb.json");
+            FirebaseApp.Create(new AppOptions { Credential = firebaseCred });
+            builder.Services.AddSingleton<FirebaseAuth>(sp =>
+                FirebaseAuth.GetAuth(FirebaseApp.DefaultInstance));
+
             var app = builder.Build();
 
             // 7. Middleware pipeline
@@ -140,6 +155,7 @@ namespace DrugPreventionAPI
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "DrugPreventionAPI v1");
                 });
             }
+            app.UseRouting();
 
             app.UseCors("AllowFrontend");
             app.UseHttpsRedirection();

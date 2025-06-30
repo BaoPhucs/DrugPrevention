@@ -15,16 +15,44 @@ namespace DrugPreventionAPI.Repositories
             _context = context;
             _configuration = configuration;
         }
-        public Task<bool> DeleteAsync(int id)
+        
+        public async Task<bool> DeleteAsync(int userId)
         {
-            var user = _context.Users.Find(id);
-            if (user == null)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return Task.FromResult(false); // User not found
+                // 1) Lấy user
+                var user = await _context.Users         //nếu muốn query cả isDelete = true thêm .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (user == null)
+                {
+                    Console.WriteLine($"User with ID {userId} not found.");
+                    return false;
+                }
+
+                // 2) Đánh dấu user là đã xóa
+                user.IsDeleted = true;
+
+                // 3) Lưu thay đổi
+                int rowsAffected = await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return rowsAffected > 0;
             }
-            _context.Users.Remove(user);
-            return Task.FromResult(_context.SaveChanges() > 0); // Returns true if at least one row was affected
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Error marking user {userId} as deleted: {ex.InnerException?.Message}");
+                return false;
+            }
+            catch (IOException ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"IO Error marking user {userId} as deleted: {ex.Message}");
+                return false;
+            }
         }
+
 
         public async Task<bool> AssignRoleAsync(int id, string role)
         {

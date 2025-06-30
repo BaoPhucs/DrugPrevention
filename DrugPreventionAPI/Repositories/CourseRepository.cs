@@ -13,7 +13,7 @@ namespace DrugPreventionAPI.Repositories
             _context = context;
         }
 
-        
+
         public async Task<bool> CreateCourseAsync(Course course)
         {
             _context.Courses.Add(course); // Adds the course to the context
@@ -79,7 +79,7 @@ namespace DrugPreventionAPI.Repositories
             course.Result.ReviewComments = comments; // Store rejection comments
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
         }
-        
+
 
         public async Task<bool> UpdateCourseAsync(Course course)
         {
@@ -161,9 +161,33 @@ namespace DrugPreventionAPI.Repositories
             if (course.WorkflowState != "Approved") return false;
 
             course.PublishAt = publishAt;
-            course.WorkflowState = "Scheduled"; // đánh dấu đã lên lịch
+            //course.WorkflowState = "Published"; // đánh dấu đã lên lịch
             _context.Courses.Update(course);
             return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> PublishIfDueAsync(int courseId)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null) return false;
+            // chỉ publish nếu đã scheduled và đến giờ
+            if (course.WorkflowState != "Approved" || course.PublishAt > DateTime.UtcNow || course.Status != "Approved")
+                return false;
+            course.Status = "Published";
+            _context.Courses.Update(course);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<int> PublishAllDueAsync()
+        {
+            var now = DateTime.UtcNow;
+            var due = await _context.Courses
+                .Where(c => c.WorkflowState == "Approved" && c.PublishAt <= now && c.Status == "Approved")
+                .ToListAsync();
+            foreach (var c in due)
+                c.Status = "Published";
+            await _context.SaveChangesAsync();
+            return due.Count;
         }
     }
 }

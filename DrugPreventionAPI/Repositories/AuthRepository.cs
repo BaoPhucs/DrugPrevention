@@ -1,8 +1,11 @@
-﻿using DrugPreventionAPI.Data;
+﻿using System.Text.Json;
+using DrugPreventionAPI.Data;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
+using FirebaseAdmin.Auth;
 using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
+using static System.Net.WebRequestMethods;
 
 namespace DrugPreventionAPI.Repositories
 {
@@ -12,12 +15,16 @@ namespace DrugPreventionAPI.Repositories
         private readonly IAdminRepository _adminRepository;
         private readonly IUserManagementRepository _userManagementRepository;
         private readonly DataContext _context;
-        public AuthRepository(DataContext context, IConfiguration configuration, IAdminRepository adminRepository, IUserManagementRepository userManagementRepository)
+        private readonly FirebaseAuth _firebaseAuth;
+        private readonly HttpClient _http;
+        public AuthRepository(DataContext context, IConfiguration configuration, IAdminRepository adminRepository, IUserManagementRepository userManagementRepository, IHttpClientFactory httpFactory)
         {
             _context = context;
             _configuration = configuration;
             _adminRepository = adminRepository;
             _userManagementRepository = userManagementRepository;
+            _firebaseAuth = FirebaseAuth.DefaultInstance;
+            _http = httpFactory.CreateClient();
         }
 
         public async Task<User> LoginAsync(string email, string password)
@@ -27,6 +34,11 @@ namespace DrugPreventionAPI.Repositories
             if (user == null || user.Password != password)
             {
                 return null; // Authentication failed
+            }
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                Console.WriteLine("User is locked out until " + user.LockoutEnd.Value);
+                return null; // User is locked out
             }
 
             return user; // Authentication successful
@@ -85,7 +97,7 @@ namespace DrugPreventionAPI.Repositories
             catch (InvalidJwtException ex)
             {
                 Console.WriteLine($"Invalid JWT: {ex.Message}");
-                return null; 
+                return null;
             }
             catch (Exception ex)
             {
@@ -157,31 +169,52 @@ namespace DrugPreventionAPI.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<string> GenerateEmailVerificationTokenAsync(string email)
+        // 1) Sinh link xác thực email
+        public async Task<string> GenerateEmailVerificationLinkAsync(string email)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null) throw new KeyNotFoundException("User not found");
-
-            var token = Guid.NewGuid().ToString("N");
-            user.EmailVerificationToken = token;
-            user.EmailVerificationExpiry = DateTime.UtcNow.AddHours(24);  // token còn hiệu lực 24h
-
-            await _context.SaveChangesAsync();
-            return token;
+            // Uses the Firebase Admin SDK to create a 24-hour verification link
+            var actionCodeSettings = new ActionCodeSettings()
+            {
+                Url = "https://localhost:7155/api/Auth/confirm-email", // optional: deep link target
+                HandleCodeInApp = false,
+                // You can restrict this link to only work for your Android/iOS apps:
+                // AndroidPackageName = "...", IOSBundleId = "..."
+            };
+            return await FirebaseAuth.DefaultInstance
+                                      .GenerateEmailVerificationLinkAsync(email, actionCodeSettings);
         }
 
-        public async Task<bool> ConfirmEmailAsync(string token)
+        public async Task<bool> ConfirmEmailAsync(string oobCode)
         {
-            var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.EmailVerificationToken == token);
-            if (user == null
-             || user.EmailVerificationExpiry < DateTime.UtcNow)
+            var apiKey = _configuration["Firebase:ApiKey"];
+            var url = $"https://identitytoolkit.googleapis.com/v1/accounts:update?key={apiKey}";
+            var payload = new
+            {
+                oobCode = oobCode,
+                requestType = "VERIFY_EMAIL"
+            };
+            var res = await _http.PostAsJsonAsync(url, payload);
+            if (!res.IsSuccessStatusCode)
                 return false;
 
-            user.EmailVerified = true;
-            user.EmailVerificationToken = null;
-            user.EmailVerificationExpiry = null;
-            await _context.SaveChangesAsync();
+            // 1) Parse response để lấy email
+            var json = await res.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("email", out var eProp))
+                return false;
+            var email = eProp.GetString();
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            // 2) Cập nhật cột EmailVerified
+            var user = await _context.Users
+                                     .FirstOrDefaultAsync(u => u.Email == email);
+            if (user != null && user.EmailVerified == false)
+            {
+                user.EmailVerified = true;
+                await _context.SaveChangesAsync();
+            }
+
             return true;
         }
     }

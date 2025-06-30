@@ -129,6 +129,7 @@ namespace DrugPreventionAPI.Helper
             // Map entity -> DTO
             CreateMap<Comment, CommentDTO>();
 
+            CreateMap<ConsultationNote, ConsultationNoteDTO>();
             // Map create-DTO -> entity
             CreateMap<CreateCommentDTO, Comment>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())

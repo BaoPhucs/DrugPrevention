@@ -233,5 +233,23 @@ namespace DrugPreventionAPI.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("{id:int}/publish")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Publish(int id)
+        {
+            var ok = await _courseRepository.PublishIfDueAsync(id);
+            if (!ok) return BadRequest("Khóa học chưa đến hạn hoặc không tồn tại.");
+            return NoContent();
+        }
+
+        // 2) Publish tất cả khóa học đến hạn (cron hoặc frontend có thể gọi)
+        [HttpPost("publish-due")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> PublishDue()
+        {
+            var count = await _courseRepository.PublishAllDueAsync();
+            return Ok(new { PublishedCount = count });
+        }
     }
 }

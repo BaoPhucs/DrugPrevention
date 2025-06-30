@@ -133,6 +133,8 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.Schedule).WithMany(p => p.AppointmentRequests)
                 .HasForeignKey(d => d.ScheduleId)
                 .HasConstraintName("FK_AppointmentRequest_Schedule");
+            entity.Property(e => e.NoShowCount).HasDefaultValue(0);
+            entity.Property(e => e.NoShowDate).HasColumnType("datetime").HasDefaultValueSql("NULL");
         });
 
         modelBuilder.Entity<BlogPost>(entity =>
@@ -805,6 +807,10 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.LockoutEnd).HasColumnType("datetime");
+            entity.Property(e => e.NoShowTotal).HasDefaultValue(0);
+
+            entity.HasQueryFilter(u => !u.IsDeleted);
         });
 
         modelBuilder.Entity<UserInquiry>(entity =>
@@ -832,6 +838,19 @@ public partial class DataContext : DbContext
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.UserInquiries)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_UserInquiry_Creator");
+            entity.HasMany(ui => ui.InquiryComments)
+                .WithOne()
+                .HasForeignKey(ic => ic.InquiryId)
+                .HasConstraintName("FK_UserInquiry_InquiryComment");
+            entity.HasMany(ui => ui.InquiryAssignments)
+                .WithOne(ia => ia.Inquiry)
+                .HasForeignKey(ia => ia.InquiryId)
+                .OnDelete(DeleteBehavior.Cascade); // Tự động xóa khi UserInquiry bị xóa
+
+            entity.HasMany(ui => ui.InquiryComments)
+                .WithOne(ic => ic.Inquiry)
+                .HasForeignKey(ic => ic.InquiryId)
+                .OnDelete(DeleteBehavior.Cascade); // Tự động xóa khi UserInquiry bị xóa
         });
 
         modelBuilder.Entity<UserSurvey>(entity =>

@@ -43,6 +43,20 @@ namespace DrugPreventionAPI.Repositories
                      .ToListAsync();
         }
 
+        public async Task<IEnumerable<User>> GetConsultant()
+        {
+            return await _context.Users
+                     .Where(u => u.Role == "Consultant")
+                     .ToListAsync();
+        }
+
+        public async Task<ConsultantSchedule> GetScheduleById(int scheduleId)
+        {
+            return await _context.ConsultantSchedules
+                .Where(s => s.Id == scheduleId)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<bool> UpdateAsync(ConsultantSchedule slot)
         {
             var existing = await _context.ConsultantSchedules.FindAsync(slot.Id);
@@ -53,6 +67,45 @@ namespace DrugPreventionAPI.Repositories
             existing.IsAvailable = slot.IsAvailable;
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<int> DisableSlotsExpiringWithinAsync(TimeSpan within)
+        {
+            var now = DateTime.UtcNow;
+            var cutoff = now.Add(within);
+
+            // tách DateOnly/TimeOnly để so sánh
+            var nowDate = DateOnly.FromDateTime(now);
+            var nowTime = TimeOnly.FromDateTime(now);
+            var cutDate = DateOnly.FromDateTime(cutoff);
+            var cutTime = TimeOnly.FromDateTime(cutoff);
+
+            var toDisable = await _context.ConsultantSchedules
+                .Where(s => s.IsAvailable == true
+                         && s.ScheduleDate.HasValue
+                         && s.StartTime.HasValue
+
+                         // phải > now
+                         && (
+                               s.ScheduleDate > nowDate
+                            || (s.ScheduleDate == nowDate && s.StartTime > nowTime)
+                            )
+
+                         // và ≤ cutoff
+                         && (
+                               s.ScheduleDate < cutDate
+                            || (s.ScheduleDate == cutDate && s.StartTime <= cutTime)
+                            )
+                      )
+                .ToListAsync();
+
+            foreach (var slot in toDisable)
+            {
+                slot.IsAvailable = false;
+            }
+
+            await _context.SaveChangesAsync();
+            return toDisable.Count;
         }
     }
 }

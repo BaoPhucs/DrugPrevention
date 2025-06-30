@@ -3,16 +3,20 @@ using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
 using DrugPreventionAPI.Repositories;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace DrugPreventionAPI.Controllers
@@ -27,7 +31,9 @@ namespace DrugPreventionAPI.Controllers
         private readonly IUserManagementRepository _userRepository;
         private readonly IAdminRepository _adminRepository;
         private readonly IConfiguration _configuration;
-        public AuthController(IAuthRepository authRepository, IMapper mapper, IEmailService emailService, IAdminRepository adminRepository, IUserManagementRepository userRepository , IConfiguration configuration)
+        private readonly FirebaseAuth _firebaseAuth;
+        private readonly HttpClient _http;
+        public AuthController(IAuthRepository authRepository, IMapper mapper, IEmailService emailService, IAdminRepository adminRepository, IUserManagementRepository userRepository, IConfiguration configuration, IHttpClientFactory clientFactory)
         {
             _authRepository = authRepository;
             _mapper = mapper;
@@ -35,6 +41,8 @@ namespace DrugPreventionAPI.Controllers
             _adminRepository = adminRepository;
             _userRepository = userRepository;
             _configuration = configuration;
+            _firebaseAuth = FirebaseAuth.DefaultInstance;
+            _http = clientFactory.CreateClient();
         }
 
         [HttpPost("login")]
@@ -45,7 +53,7 @@ namespace DrugPreventionAPI.Controllers
 
             var user = await _authRepository.LoginAsync(loginRequest.Email, loginRequest.Password);
             if (user == null)
-                return Unauthorized("Invalid email or password");
+                return Unauthorized("Invalid credentials or account is locked.");
 
             // 1) Chuẩn bị các claim
             var claims = new[]
@@ -130,84 +138,130 @@ namespace DrugPreventionAPI.Controllers
         }
 
 
-
-
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterUserDTO registerDto)
+        public async Task<IActionResult> Register([FromBody] RegisterUserDTO dto)
         {
-            if (string.IsNullOrWhiteSpace(registerDto.Email) || string.IsNullOrWhiteSpace(registerDto.Password) ||
-                string.IsNullOrWhiteSpace(registerDto.Name) || registerDto.Dob == null)
-            {
-                return BadRequest("All required fields (email, password, name, dob) must be provided");
-            }
+            // 1) Basic validation
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            // Kiểm tra định dạng email
-            if (!new EmailAddressAttribute().IsValid(registerDto.Email))
-            {
+            if (!new EmailAddressAttribute().IsValid(dto.Email))
                 return BadRequest("Invalid email format");
-            }
 
-            // Kiểm tra độ dài mật khẩu
-            if (registerDto.Password.Length < 6)
-            {
-                return BadRequest("Password must be at least 6 characters long");
-            }
+            if (dto.Password.Length < 6)
+                return BadRequest("Password must be at least 6 characters");
 
-            // Kiểm tra email đã tồn tại
-            if (await _adminRepository.UserExistAsync(registerDto.Email))
-            {
-                return BadRequest("Email already exists");
-            }
+            if (await _adminRepository.UserExistAsync(dto.Email))
+                return BadRequest("Email already in use");
 
-            // Tạo và ánh xạ thủ công sang User
+            // 2) Map to your User model
             var user = new User
             {
-                Name = registerDto.Name,
-                Dob = registerDto.Dob,
-                Phone = registerDto.Phone, // Null nếu chưa có
-                Email = registerDto.Email,
-                Password = registerDto.Password, // Lưu mật khẩu thô
-                AgeGroup = registerDto.AgeGroup, // Null nếu chưa có
-                Role = "Member", // Giá trị mặc định từ model
-                EmailVerified = false, // Giả sử đã xác minh
+                Name = dto.Name,
+                Dob = dto.Dob,
+                Phone = dto.Phone,
+                Email = dto.Email,
+                Password = dto.Password,   // consider hashing!
+                AgeGroup = dto.AgeGroup,
+                Role = "Member",
+                EmailVerified = false,
                 CreatedDate = DateTime.UtcNow
             };
 
-            if (!await _authRepository.RegisterAsync(user))
-                return StatusCode(500, "Error registering user");
+            // 3) Save to your own Users table
+            var ok = await _authRepository.RegisterAsync(user);
+            if (!ok)
+                return StatusCode(500, "Could not create user");
 
-            // Sinh token xác thực và lưu (cần cài thêm method trong IAuthRepository)
-            var token = await _authRepository.GenerateEmailVerificationTokenAsync(user.Email);
+            var userArgs = new UserRecordArgs()
+            {
+                Email = user.Email,
+                EmailVerified = false,
+                Password = user.Password
+            };
+            var fbUser = await _firebaseAuth.CreateUserAsync(userArgs);
 
-            // Gửi email xác thực
-            var confirmUrl = $"{Request.Scheme}://{Request.Host}/api/auth/confirm-email?token={token}";
+            // 1) sinh link Firebase
+            var actionSettings = new ActionCodeSettings
+            {
+                Url = $"{Request.Scheme}://{Request.Host}/api/Auth/confirm-email",
+                HandleCodeInApp = false
+            };
+            var firebaseLink = await _firebaseAuth.GenerateEmailVerificationLinkAsync(user.Email, actionSettings);
+
+            // 2) parse ra oobCode
+            var uri = new Uri(firebaseLink);
+            var queryParams = QueryHelpers.ParseQuery(uri.Query);
+            var code = queryParams["oobCode"].ToString();
+
+            // 3) build link về API của bạn
+            var confirmLink = $"{Request.Scheme}://{Request.Host}/api/Auth/confirm-email?oobCode={code}";
+
+            // 4) gửi email: show luôn mã và link đúng
             var html = $@"
-                <p>Hello {user.Name},</p>    
-                <p>Please click <a href=""{confirmUrl}"">here</a> to verify your email.</p>
-                <p>This link is valid for 24 hours.</p>";
+<p>Xin chào {user.Name},</p>
+<p>Vui lòng xác thực email bằng một trong hai cách:</p>
+<ul>
+  <li>Click <a href=""{confirmLink}"">vào đây</a> để tự động xác thực.</li>
+  <li>Hoặc copy mã sau và paste vào form xác thực trên ứng dụng:</li>
+</ul>
+<p><strong>{code}</strong></p>
+<p>Mã có hiệu lực trong 24h.</p>";
+            await _emailService.SendEmailAsync(user.Email, "Xác thực email DrugPrevention", html);
 
-            await _emailService.SendEmailAsync(
-                user.Email,
-                "DrugPrevention Email Authentication",
-                html
-            );
-
-            return Accepted(new { Message = "Please check your email for verification." });
+            return Accepted(new { Message = "Đăng ký thành công. Vui lòng kiểm tra hộp thư để xác thực email." });
         }
+
 
         [HttpGet("confirm-email")]
         [AllowAnonymous]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+        public async Task<IActionResult> ConfirmEmailByLink([FromQuery] string? oobCode)
         {
-            if (string.IsNullOrWhiteSpace(token))
-                return BadRequest("Invalid token.");
+            if (string.IsNullOrWhiteSpace(oobCode))
+                return BadRequest("Thiếu mã xác thực (oobCode).");
 
-            var ok = await _authRepository.ConfirmEmailAsync(token);
-            if (!ok) return BadRequest("The authentication link is invalid or has expired.");
+            var ok = await _authRepository.ConfirmEmailAsync(oobCode);
+            if (!ok)
+                return BadRequest("Mã xác thực không hợp lệ hoặc đã hết hạn.");
 
-            var loginUrl = $"{Request.Scheme}://localhost:5173/login";
-            return Redirect(loginUrl);
+            // Trả về một trang HTML đơn giản
+            var html = @"
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset=""utf-8"">
+  <title>Xác thực email</title>
+</head>
+<body>
+  <h1>Email đã được xác thực thành công!</h1>
+  <p>Bạn có thể đóng trang này và quay trở lại ứng dụng.</p>
+</body>
+</html>";
+            return new ContentResult
+            {
+                ContentType = "text/html; charset=utf-8",
+                StatusCode = 200,
+                Content = html
+            };
         }
+
+
+        [HttpPost("confirm-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Gọi Firebase để confirm email
+            var ok = await _authRepository.ConfirmEmailAsync(dto.OobCode);
+            if (!ok)
+                return BadRequest("Mã xác thực không hợp lệ hoặc đã hết hạn.");
+
+            return Ok("Email đã được xác thực thành công!");
+        }
+
+
 
         [HttpPost("change-password")]
         [Authorize] // Yêu cầu người dùng đã đăng nhập
@@ -276,7 +330,8 @@ namespace DrugPreventionAPI.Controllers
         [Authorize]
         public IActionResult CheckAuth()
         {
-            var claims = User.Claims.Select(c => new {
+            var claims = User.Claims.Select(c => new
+            {
                 Type = c.Type,
                 Value = c.Value
             }).ToList();
@@ -289,12 +344,6 @@ namespace DrugPreventionAPI.Controllers
                 IsAdmin = User.IsInRole("Admin, Manager"),
                 Roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList()
             });
-        }
-
-        [HttpGet("access-denied")]
-        public IActionResult AccessDenied()
-        {
-            return Forbid("Access denied. Admin role required.");
         }
     }
 }
