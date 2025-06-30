@@ -9,7 +9,6 @@ namespace DrugPreventionAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class InquiryAssignmentController : ControllerBase
     {
         private readonly IInquiryAssignmentRepository _repo;
@@ -20,16 +19,16 @@ namespace DrugPreventionAPI.Controllers
             IMapper mapper
         ) => (_repo, _mapper) = (repo, mapper);
 
-        [HttpGet("inquiry/{inquiryId}")]
-        [Authorize(Roles = "Staff,Consultant,Manager,Admin")]
+        [HttpGet("get-inquiry-assignment/{inquiryId}")]
+        [Authorize(Roles = "Staff,Consultant")]
         public async Task<IActionResult> GetByInquiry(int inquiryId)
         {
             var list = await _repo.GetByInquiryIdAsync(inquiryId);
             return Ok(_mapper.Map<IEnumerable<InquiryAssignmentDTO>>(list));
         }
 
-        [HttpGet("{id}")]
-        [Authorize(Roles = "Staff,Consultant,Manager,Admin")]
+        [HttpGet("get-assignment/{id}")]
+        [Authorize(Roles = "Staff,Consultant")]
         public async Task<IActionResult> Get(int id)
         {
             var a = await _repo.GetByIdAsync(id);
@@ -37,8 +36,8 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<InquiryAssignmentDTO>(a));
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Staff,Admin,Manager")]
+        [HttpPost("create-inquiry-assignment")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Create(CreateInquiryAssignment dto)
         {
             var entity = _mapper.Map<InquiryAssignment>(dto);
@@ -48,8 +47,8 @@ namespace DrugPreventionAPI.Controllers
                 _mapper.Map<InquiryAssignmentDTO>(created));
         }
 
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Manager,Admin")]
+        [HttpPut("update-inquiry-assignment{id}")]
+        [Authorize(Roles = "Consultant, Staff")]
         public async Task<IActionResult> Update(int id, CreateInquiryAssignment dto)
         {
             var existing = await _repo.GetByIdAsync(id);
