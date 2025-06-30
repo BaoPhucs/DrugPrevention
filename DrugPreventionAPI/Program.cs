@@ -55,6 +55,7 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<ICommentRepo, CommentRepo>();
             builder.Services.AddScoped<ITagRepo, TagRepo>();
 
+
             builder.Services.AddScoped<ISurveySubstanceRepository, SurveySubstanceRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             // Email service
