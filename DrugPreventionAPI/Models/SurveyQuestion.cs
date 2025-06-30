@@ -17,7 +17,12 @@ public partial class SurveyQuestion
 
     public Survey? Survey { get; set; }
 
+    public int? SubstanceId { get; set; }
+
+    public SurveySubstance? Substance { get; set; }
+
     public ICollection<SurveyOption> SurveyOptions { get; set; } 
 
     public ICollection<SurveySubmissionAnswer> SurveySubmissionAnswers { get; set; } 
+
 }

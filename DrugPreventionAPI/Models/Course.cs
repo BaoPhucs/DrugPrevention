@@ -37,6 +37,10 @@ public partial class Course
 
     public DateTime? UpdateDate { get; set; }
 
+    public DateTime? PublishAt { get; set; }
+
+    public ICollection<Certificate> Certificates { get; set; }
+
     public ICollection<CourseEnrollment> CourseEnrollments { get; set; }
 
     public ICollection<CourseMaterial> CourseMaterials { get; set; }

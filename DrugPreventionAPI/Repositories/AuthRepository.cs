@@ -74,7 +74,7 @@ namespace DrugPreventionAPI.Repositories
                 {
                     // cập nhật các thông tin có thể thay đổi
                     var updated = false;
-                    if (user.Name != fullName) { user.Name = fullName; updated = true; }
+                    //if (user.Name != fullName) { user.Name = fullName; updated = true; }
                     if (user.EmailVerified != true) { user.EmailVerified = true; updated = true; }
                     if (updated)
                         await _userManagementRepository.UpdateAsync(user);
@@ -85,7 +85,7 @@ namespace DrugPreventionAPI.Repositories
             catch (InvalidJwtException ex)
             {
                 Console.WriteLine($"Invalid JWT: {ex.Message}");
-                return null;
+                return null; 
             }
             catch (Exception ex)
             {

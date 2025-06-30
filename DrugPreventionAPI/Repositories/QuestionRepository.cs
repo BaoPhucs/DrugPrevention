@@ -100,10 +100,33 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var q = await _context.QuestionBanks.FindAsync(id);
-            if (q == null) return false;
-            _context.QuestionBanks.Remove(q);
-            return await _context.SaveChangesAsync() > 0;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Tìm câu hỏi
+                var question = await _context.QuestionBanks.FindAsync(id);
+                if (question == null)
+                {
+                    return false;
+                }
+
+                // Xóa các bản ghi trong CourseQuestion liên quan đến câu hỏi
+                var courseQuestions = await _context.CourseQuestions
+                    .Where(cq => cq.QuestionId == id)
+                    .ToListAsync();
+                _context.CourseQuestions.RemoveRange(courseQuestions);
+
+                // Xóa câu hỏi
+                _context.QuestionBanks.Remove(question);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
         }
 
         // QuestionOption

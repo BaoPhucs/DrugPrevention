@@ -11,6 +11,8 @@ public partial class QuestionBank
 
     public string? Level { get; set; }
 
+    public string? Category { get; set; }
+
     public DateTime? CreatedDate { get; set; }
 
     public ICollection<CourseQuestion> CourseQuestions { get; set; }

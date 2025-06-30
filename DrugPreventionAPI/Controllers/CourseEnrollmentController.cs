@@ -33,7 +33,7 @@ namespace DrugPreventionAPI.Controllers
             return NoContent();
         }
 
-        [HttpDelete("courses/{courseId:int}/enroll")]
+        [HttpDelete("courses/{courseId:int}/unenroll")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> Cancel(int courseId)
         {

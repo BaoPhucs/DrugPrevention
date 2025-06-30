@@ -17,6 +17,8 @@ public partial class SurveySubmission
 
     public DateTime? SubmissionDate { get; set; }
 
+    public string? Recommendation { get; set; }
+
     public bool? IsAnonymous { get; set; }
 
     public User? Member { get; set; }

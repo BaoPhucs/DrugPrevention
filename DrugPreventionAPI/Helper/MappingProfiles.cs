@@ -15,7 +15,9 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CourseDTO, Course>()
                 .ForMember(dest => dest.CreatedById, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-                .ForMember(dest => dest.ReviewComments, opt => opt.Ignore());
+                .ForMember(dest => dest.ReviewComments, opt => opt.Ignore())
+                .ForMember(dest => dest.Status, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkflowState, opt => opt.Ignore());
             CreateMap<CourseMaterial, CourseMaterialDTO>();
             CreateMap<CourseMaterialDTO, CourseMaterial>();
             CreateMap<CourseMaterial, CourseMaterialReadDTO>();
@@ -81,6 +83,31 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateQuestionDTO, QuestionBank>();
             CreateMap<CreateOptionDTO, QuestionOption>();
 
+            // SurveyAdd commentMore actions
+            CreateMap<Survey, SurveyDTO>();
+            CreateMap<CreateSurveyDTO, Survey>();
+
+            // SurveyQuestion
+            CreateMap<SurveyQuestion, SurveyQuestionDTO>()
+                .ForMember(dest => dest.Options,
+                           opt => opt.MapFrom(src => src.SurveyOptions.OrderBy(o => o.Sequence)));
+            CreateMap<CreateSurveyQuestionDTO, SurveyQuestion>();
+
+            // SurveyOption
+            CreateMap<SurveyOption, SurveyOptionDTO>();
+            CreateMap<CreateSurveyOptionDTO, SurveyOption>();
+
+            // Submission
+            CreateMap<SurveySubmission, SurveySubmissionReadDTO>();
+            CreateMap<SurveySubmission, SurveySubmissionDetailDTO>()
+                .ForMember(d => d.Answers,
+                           o => o.MapFrom(src => src.SurveySubmissionAnswers
+                                                   .Select(a => new SurveyAnswerDTO
+                                                   {
+                                                       QuestionId = a.QuestionId,
+                                                       OptionId = a.OptionId
+                                                   })));
+
             //Inquiry <-> InquiryAssignment
             CreateMap<InquiryAssignment, InquiryAssignmentDTO>();
             CreateMap<CreateInquiryAssignment, InquiryAssignment>()
@@ -108,14 +135,8 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-            // Map update-DTO -> entity (patch existing)
-            CreateMap<UpdateCommentDTO, Comment>()
-                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-
-            // Extend existing mappings:
-            CreateMap<BlogPost, BlogPostDTO>()
-                .ForMember(d => d.Tags, o => o.MapFrom(s => s.BlogTags.Select(bt => bt.Tag)))
-                .ForMember(d => d.Comments, o => o.MapFrom(s => s.Comments));
+            CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();
+            CreateMap<AppointmentRequest, AppointmentRequestDTO>();
 
         }
     }

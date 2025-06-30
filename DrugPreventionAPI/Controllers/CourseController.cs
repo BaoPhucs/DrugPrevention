@@ -111,7 +111,7 @@ namespace DrugPreventionAPI.Controllers
         [Authorize(Roles = "Consultant")]
         public async Task<IActionResult> CreateCourse([FromBody] CourseDTO courseDto)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -145,7 +145,7 @@ namespace DrugPreventionAPI.Controllers
         [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> UpdateCourse(int courseId, [FromBody] CourseDTO courseDto)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -159,7 +159,6 @@ namespace DrugPreventionAPI.Controllers
 
             existingCourse.UpdateById = CurrentUserId; // Gán ID người dùng hiện tại
             existingCourse.UpdateDate = DateTime.UtcNow; // Cập nhật ngày sửa đổi
-            existingCourse.Status = "Pending"; // Đặt lại trạng thái về Pending sau khi cập nhật
 
             var result = await _courseRepository.UpdateCourseAsync(existingCourse);
             if (!result)
@@ -204,11 +203,34 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPost("{courseId}/submit-to-manager")]
-        [Authorize(Roles = "Staff")]
+        [Authorize(Roles = "Consultant, Staff")]
         public async Task<IActionResult> SubmitToManager(int courseId)
         {
             var ok = await _courseRepository.SubmitToManagerAsync(courseId, CurrentUserId);
             if (!ok) return BadRequest("Không hợp lệ hoặc khóa học chưa được gửi tới Staff.");
+            return NoContent();
+        }
+
+        [HttpPost("{courseId}/published")]
+        [Authorize(Roles = "Manager, Staff")]
+        public async Task<IActionResult> PublishCourse(int courseId)
+        {
+            var ok = await _courseRepository.PublicCourse(courseId, CurrentUserId);
+            if (!ok) return BadRequest("Không hợp lệ hoặc khóa học chưa được phê duyệt.");
+            return NoContent();
+        }
+
+        [HttpPut("{id:int}/schedule-publish")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> SchedulePublish(int id, [FromBody] SchedulePublishDTO dto)
+        {
+            if (dto.PublishAt <= DateTime.UtcNow)
+                return BadRequest("PublishAt phải ở tương lai.");
+
+            var ok = await _courseRepository.SchedulePublishAsync(id, dto.PublishAt);
+            if (!ok)
+                return BadRequest("Không thể lên lịch (chưa Approved hoặc Course không tồn tại).");
+
             return NoContent();
         }
     }

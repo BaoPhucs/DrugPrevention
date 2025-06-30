@@ -132,13 +132,37 @@ namespace DrugPreventionAPI.Repositories
         public async Task<bool> SubmitToManagerAsync(int courseId, int userId)
         {
             var course = await _context.Courses.FindAsync(courseId);
-            if (course == null || course.WorkflowState != "SubmittedToStaff")
+            if (course == null)
                 return false;
 
             course.WorkflowState = "SubmittedToManager";
             course.UpdateById = userId;
             course.UpdateDate = DateTime.UtcNow;
 
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> PublicCourse(int couseId, int userId)
+        {
+            var course = await _context.Courses.FindAsync(couseId);
+            if (course == null || course.WorkflowState != "Approved" || course.Status != "Approved")
+                return false;
+            course.Status = "Published";
+            course.UpdateById = userId;
+            course.UpdateDate = DateTime.UtcNow;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> SchedulePublishAsync(int courseId, DateTime publishAt)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null) return false;
+            // Chỉ cho phép khi đã được Manager approve
+            if (course.WorkflowState != "Approved") return false;
+
+            course.PublishAt = publishAt;
+            course.WorkflowState = "Scheduled"; // đánh dấu đã lên lịch
+            _context.Courses.Update(course);
             return await _context.SaveChangesAsync() > 0;
         }
     }

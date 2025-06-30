@@ -21,7 +21,8 @@ namespace DrugPreventionAPI.Repositories
         public async Task<bool> CreateQuestionAsync(SurveyQuestion question)
         {
             _context.SurveyQuestions.Add(question);
-            return await _context.SaveChangesAsync() > 0;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> DeleteOptionAsync(int optionId)
@@ -37,21 +38,23 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<bool> DeleteQuestionAsync(int questionId)
         {
-            var question = await _context.SurveyQuestions.FindAsync(questionId);
-            if (question == null)
-            {
-                return false; 
-            }
-            _context.SurveyQuestions.Remove(question);
-            return await _context.SaveChangesAsync() > 0; 
+            var ex = await _context.SurveyQuestions.FindAsync(questionId);
+            if (ex == null) return false;
+            _context.SurveyQuestions.Remove(ex);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IEnumerable<SurveyQuestion>> GetBySurveyAsync(int surveyId)
         {
             return await _context.SurveyQuestions
-                .Where(q => q.SurveyId == surveyId)
-                .Include(q => q.SurveyOptions.OrderBy(o => o.Sequence))
-                .ToListAsync();
+                  .Include(q => q.Substance)
+                  .Include(q => q.SurveyOptions)
+                  .Where(q => q.SurveyId == surveyId)
+                  .OrderBy(q => q.Substance!.SortOrder)
+                  .ThenBy(q => q.Sequence)
+                  .ToListAsync();
+
         }
 
         public async Task<SurveyOption?> GetOptionByIdAsync(int optionId)
@@ -70,8 +73,9 @@ namespace DrugPreventionAPI.Repositories
         public async Task<SurveyQuestion?> GetQuestionByIdAsync(int questionId)
         {
             return await _context.SurveyQuestions
-                         .Include(q => q.SurveyOptions.OrderBy(o => o.Sequence))
-                         .FirstOrDefaultAsync(q => q.Id == questionId);
+                  .Include(q => q.Substance)
+                  .Include(q => q.SurveyOptions)
+                  .FirstOrDefaultAsync(q => q.Id == questionId);
         }
 
         public async Task<bool> UpdateOptionAsync(SurveyOption option)
@@ -82,8 +86,13 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<bool> UpdateQuestionAsync(SurveyQuestion question)
         {
-            _context.SurveyQuestions.Update(question);
-            return await _context.SaveChangesAsync() > 0;
+            var ex = await _context.SurveyQuestions.FindAsync(question.Id);
+            if (ex == null) return false;
+            ex.QuestionText = question.QuestionText;
+            ex.Sequence = question.Sequence;
+            ex.SubstanceId = question.SubstanceId;
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

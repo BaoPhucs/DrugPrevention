@@ -42,9 +42,7 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IConsultationNoteRepository, ConsultationNoteRepository>();
             builder.Services.AddScoped<IAppointmentRequestRepository, AppointmentRequestRepository>();
             builder.Services.AddScoped<IConsultantScheduleRepository, ConsultantScheduleRepository>();
-            builder.Services.AddScoped<IBlogPostRepo, BlogPostRepo>();
-            builder.Services.AddScoped<ITagRepo, TagRepo>();
-            builder.Services.AddScoped<ICommentRepo, CommentRepo>();
+
             // Email service
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();
@@ -118,7 +116,8 @@ namespace DrugPreventionAPI
                 options.AddPolicy("AllowFrontend", policy =>
                 {
                     policy
-                      .WithOrigins("https://your-frontend.com")   // hoặc .AllowAnyOrigin() khi dev
+                      //.WithOrigins("http://localhost:5173/")   // hoặc .AllowAnyOrigin() khi dev
+                      .AllowAnyOrigin()
                       .AllowAnyMethod()
                       .WithHeaders("Content-Type", "Authorization"); // <-- thêm Authorization ở đây
                 });
