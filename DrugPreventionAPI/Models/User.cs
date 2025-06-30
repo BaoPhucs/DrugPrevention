@@ -33,6 +33,8 @@ public partial class User
 
     public int NoShowTotal { get; set; }
 
+    public bool IsDeleted { get; set; } = false;
+
     public DateTime? CreatedDate { get; set; }
 
     public ICollection<Certificate> Certificates { get; set; }

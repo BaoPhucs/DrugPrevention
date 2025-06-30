@@ -15,81 +15,42 @@ namespace DrugPreventionAPI.Repositories
             _context = context;
             _configuration = configuration;
         }
-        //public Task<bool> DeleteAsync(int id)
-        //{
-        //    var user = _context.Users.Find(id);
-        //    if (user == null)
-        //    {
-        //        return Task.FromResult(false); // User not found
-        //    }
-        //    _context.Users.Remove(user);
-        //    return Task.FromResult(_context.SaveChanges() > 0); // Returns true if at least one row was affected
-        //}
+        
         public async Task<bool> DeleteAsync(int userId)
         {
-            // 1) Lấy user cùng tất cả các collection liên quan
-            var user = await _context.Users
-                .Include(u => u.AppointmentRequestMembers)
-                .Include(u => u.AppointmentRequestConsultants)
-                .Include(u => u.Notifications)
-                .Include(u => u.CourseEnrollments)
-                .Include(u => u.QuizSubmissions)
-                .Include(u => u.SurveySubmissions)
-                .Include(u => u.ConsultantSchedules)
-                .Include(u => u.ConsultationNoteMembers)
-                .Include(u => u.ConsultationNoteConsultants)
-                .Include(u => u.UserInquiries)
-                .Include(u => u.InquiryAssignmentAssignedTos)
-                .Include(u => u.InquiryAssignmentAssignedBies)
-                .Include(u => u.InquiryComments)
-                .Include(u => u.ActivityParticipations)
-                .Include(u => u.BlogPosts)
-                .Include(u => u.Comments)
-                .Include(u => u.Certificates)
-                .Include(u => u.UserSurveys)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1) Lấy user
+                var user = await _context.Users         //nếu muốn query cả isDelete = true thêm .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
+                if (user == null)
+                {
+                    Console.WriteLine($"User with ID {userId} not found.");
+                    return false;
+                }
+
+                // 2) Đánh dấu user là đã xóa
+                user.IsDeleted = true;
+
+                // 3) Lưu thay đổi
+                int rowsAffected = await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return rowsAffected > 0;
+            }
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Error marking user {userId} as deleted: {ex.InnerException?.Message}");
                 return false;
-
-            // 2) Xóa mọi thứ phụ thuộc
-            _context.AppointmentRequests.RemoveRange(user.AppointmentRequestMembers);
-            _context.AppointmentRequests.RemoveRange(user.AppointmentRequestConsultants);
-
-            _context.Notifications.RemoveRange(user.Notifications);
-
-            _context.CourseEnrollments.RemoveRange(user.CourseEnrollments);
-
-            _context.QuizSubmissions.RemoveRange(user.QuizSubmissions);
-
-            _context.SurveySubmissions.RemoveRange(user.SurveySubmissions);
-
-            _context.ConsultantSchedules.RemoveRange(user.ConsultantSchedules);
-
-            _context.ConsultationNotes.RemoveRange(user.ConsultationNoteMembers);
-            _context.ConsultationNotes.RemoveRange(user.ConsultationNoteConsultants);
-
-            _context.UserInquiries.RemoveRange(user.UserInquiries);
-
-            _context.InquiryAssignments.RemoveRange(user.InquiryAssignmentAssignedTos);
-            _context.InquiryAssignments.RemoveRange(user.InquiryAssignmentAssignedBies);
-
-            _context.InquiryComments.RemoveRange(user.InquiryComments);
-
-            _context.ActivityParticipations.RemoveRange(user.ActivityParticipations);
-
-            _context.BlogPosts.RemoveRange(user.BlogPosts);
-
-            _context.Comments.RemoveRange(user.Comments);
-
-            _context.Certificates.RemoveRange(user.Certificates);
-
-            _context.UserSurveys.RemoveRange(user.UserSurveys);
-
-            // 3) Cuối cùng xoá chính user
-            _context.Users.Remove(user);
-
-            return await _context.SaveChangesAsync() > 0;
+            }
+            catch (IOException ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"IO Error marking user {userId} as deleted: {ex.Message}");
+                return false;
+            }
         }
 
 
