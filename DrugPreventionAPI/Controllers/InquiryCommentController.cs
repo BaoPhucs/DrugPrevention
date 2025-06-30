@@ -2,6 +2,7 @@
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DrugPreventionAPI.Controllers
@@ -18,14 +19,16 @@ namespace DrugPreventionAPI.Controllers
             IMapper mapper
         ) => (_repo, _mapper) = (repo, mapper);
 
-        [HttpGet("inquiry/{inquiryId:int}")]
+        [HttpGet("get-inquiry-comment/inquiry/{inquiryId:int}")]
+        [Authorize]
         public async Task<IActionResult> GetByInquiry(int inquiryId)
         {
             var list = await _repo.GetByInquiryAsync(inquiryId);
             return Ok(_mapper.Map<IEnumerable<InquiryCommentDTO>>(list));
         }
 
-        [HttpGet("{id:int}")]
+        [HttpGet("get-inquiry-comment/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> Get(int id)
         {
             var comment = await _repo.GetByIdAsync(id);
@@ -33,7 +36,8 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<InquiryCommentDTO>(comment));
         }
 
-        [HttpPost]
+        [HttpPost("create-inquiry-comment")]
+        [Authorize]
         public async Task<IActionResult> Create(CreateInquiryCommentDTO dto)
         {
             var entity = _mapper.Map<InquiryComment>(dto);
@@ -43,7 +47,8 @@ namespace DrugPreventionAPI.Controllers
                 _mapper.Map<InquiryCommentDTO>(created));
         }
 
-        [HttpPut("{id:int}")]
+        [HttpPut("update-inquiry-comment/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> Update(int id, CreateInquiryCommentDTO dto)
         {
             var existing = await _repo.GetByIdAsync(id);

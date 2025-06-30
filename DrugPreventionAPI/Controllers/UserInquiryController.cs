@@ -12,7 +12,6 @@ namespace DrugPreventionAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]  // require a valid JWT for all actions by default
     public class UserInquiryController : ControllerBase
     {
         private readonly IUserInquiryRepository _repo;
@@ -38,7 +37,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Guests & Members can create
-        [HttpPost]
+        [HttpPost("create-inquiry")]
         [AllowAnonymous]
         public async Task<IActionResult> Create(CreateUserInquiryDTO dto)
         {
@@ -70,7 +69,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Staff list all
-        [HttpGet]
+        [HttpGet("get-inquiry-by-staff")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetAll()
         {
@@ -80,7 +79,8 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Get by ID (with Member/Consultant/Manager/Admin guards)
-        [HttpGet("{id:int}")]
+        [HttpGet("get-inquiry/{id:int}")]
+        [Authorize]
         public async Task<IActionResult> Get(int id)
         {
             var iq = await _repo.GetByIdAsync(id);
@@ -104,7 +104,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Update – only Members may update their own
-        [HttpPut("{id:int}")]
+        [HttpPut("update-inquiry/{id:int}")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> Update(int id, UpdateUserInquiryDTO dto)
         {
@@ -122,7 +122,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Delete – Consultant/Manager/Admin, with “assigned to” check for Consultants only
-        [HttpDelete("{id:int}")]
+        [HttpDelete("delete-inquiry/{id:int}")]
         [Authorize(Roles = "Consultant,Manager,Admin")]
         public async Task<IActionResult> Delete(int id)
         {
