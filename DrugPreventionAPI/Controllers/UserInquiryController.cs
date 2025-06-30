@@ -56,7 +56,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Members list their own
-        [HttpGet("myInquiries")]
+        [HttpGet("Member-Inquiries")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> MyInquiries()
         {
@@ -70,8 +70,8 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Staff list all
-        [HttpGet]
-        [Authorize(Roles = "Staff")]
+        [HttpGet("GetAll")]
+        [Authorize(Roles = "Staff, Manager, Admin")]
         public async Task<IActionResult> GetAll()
         {
             var list = await _repo.GetAllAsync();
@@ -104,7 +104,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Update – only Members may update their own
-        [HttpPut("{id:int}")]
+        [HttpPut("Member-Update/{id:int}")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> Update(int id, UpdateUserInquiryDTO dto)
         {

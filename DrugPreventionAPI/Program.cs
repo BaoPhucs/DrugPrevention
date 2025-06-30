@@ -48,7 +48,14 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<IConsultationNoteRepository, ConsultationNoteRepository>();
             builder.Services.AddScoped<IAppointmentRequestRepository, AppointmentRequestRepository>();
             builder.Services.AddScoped<IConsultantScheduleRepository, ConsultantScheduleRepository>();
+            builder.Services.AddScoped<ICommunicationActivityRepository, CommunicationActivityRepository>();
+            builder.Services.AddScoped<IActivityParticipationRepository, ActivityParticipationRepository>();
             builder.Services.AddScoped<ICertificateRepository, CertificateRepository>();
+            builder.Services.AddScoped<IBlogPostRepo, BlogPostRepo>();
+            builder.Services.AddScoped<ICommentRepo, CommentRepo>();
+            builder.Services.AddScoped<ITagRepo, TagRepo>();
+
+
             builder.Services.AddScoped<ISurveySubstanceRepository, SurveySubstanceRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             // Email service
