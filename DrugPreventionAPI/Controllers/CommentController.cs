@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Security.Claims;
+using AutoMapper;
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
 using DrugPreventionAPI.Repositories;
@@ -22,11 +23,15 @@ namespace DrugPreventionAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpPost]
+        [HttpPost("createNewComment-allowAllExceptGuest")]
         [Authorize(Roles = "Staff,Consultant,Manager,Admin, Member")]
         public async Task<IActionResult> Create([FromBody] CreateCommentDTO dto)
         {
-            Console.WriteLine($"Incoming DTO: BlogPostId={dto.BlogPostId}, ActivityId={dto.ActivityId}, ParentId={dto.ParentCommentId}");
+
+            if (dto is null || dto.Content is null)
+                return BadRequest("Missing content.");
+
+            Console.WriteLine($"Incoming DTO: BlogPostId={dto.BlogPostId}, ActivityId={dto.ActivityId}");
 
             var comment = await _repo.AddAsync(dto);
             return CreatedAtAction(nameof(GetById),
@@ -43,7 +48,7 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<CommentDTO>(comment));
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("update-GuestCannot/{id}")]
         [Authorize(Roles = "Staff,Consultant,Manager,Admin, Member")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCommentDTO dto)
         {
@@ -59,7 +64,7 @@ namespace DrugPreventionAPI.Controllers
             return NoContent();
         }
 
-        [HttpGet]
+        [HttpGet("GetAll-OnlyAdminManagerStaff")]
         [Authorize(Roles = "Admin,Manager, Staff")]
         public async Task<IActionResult> GetAll()
         {
@@ -67,7 +72,7 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<IEnumerable<CommentDTO>>(comments));
         }
 
-        [HttpGet("blog/{postId}")]
+        [HttpGet("GetCommentByBlogPost/{postId}")]
         [Authorize(Roles = "Admin,Manager, Staff")]
         public async Task<IActionResult> GetByPost(int postId)
         {
@@ -75,7 +80,7 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<IEnumerable<CommentDTO>>(comments));
         }
 
-        [HttpGet("activity/{activityId}")]
+        [HttpGet("GetAllCommentsByActivity/{activityId}")]
         [Authorize(Roles = "Admin,Manager, Staff")]
         public async Task<IActionResult> GetByActivity(int activityId)
         {
@@ -89,6 +94,17 @@ namespace DrugPreventionAPI.Controllers
         {
             var replies = await _repo.GetRepliesAsync(parentCommentId);
             return Ok(_mapper.Map<IEnumerable<CommentDTO>>(replies));
+        }
+
+        [HttpPost("reply-allowAllExceptGuest")]
+        [Authorize(Roles = "Staff,Consultant,Manager,Admin,Member")]
+        public async Task<IActionResult> CreateReply([FromBody] CreateReplyDTO dto)
+        {
+            var memberId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0"); // extension method
+            var reply = await _repo.AddReplyAsync(dto, memberId);
+            return CreatedAtAction(nameof(GetById),
+                new { id = reply.Id },
+                _mapper.Map<CommentDTO>(reply));
         }
 
     }

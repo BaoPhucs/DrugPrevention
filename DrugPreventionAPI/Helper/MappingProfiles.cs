@@ -134,11 +134,21 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<UpdateCommentDTO, Comment>()
+    .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
+            //
             CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();
             CreateMap<AppointmentRequest, AppointmentRequestDTO>();
+
+            // CommunicationAct - ActParticipation
+            CreateMap<CommunicationActivity, CommunicationActivityDTO>();
+            CreateMap<CreateCommunicationActivityDTO, CommunicationActivity>()
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+            CreateMap<ActivityParticipation, ActivityParticipationDTO>();
+            CreateMap<ActivityParticipationDTO, ActivityParticipation>();
 
         }
     }
 }
-//trial commit

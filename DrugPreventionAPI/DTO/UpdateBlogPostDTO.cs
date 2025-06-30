@@ -7,7 +7,7 @@ namespace DrugPreventionAPI.DTO
         public string Title { get; set; } = null!;
         public string? Content { get; set; }
         public string? CoverImageUrl { get; set; }
-        public IEnumerable<int> TagIds { get; set; }  // for BlogTag
+        public List<int>? TagIds { get; set; }  // for BlogTag
 
 
     }

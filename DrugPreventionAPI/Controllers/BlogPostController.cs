@@ -40,12 +40,12 @@ namespace DrugPreventionAPI.Controllers
             return CreatedAtAction(nameof(Get), new { id = created.Id }, _mapper.Map<BlogPostDTO>(created));
         }
 
-        [HttpPut("{Id}")]
+        [HttpPut("{BlogPostId}")]
         [Authorize(Roles = "Admin, Manager")]
-        public async Task<IActionResult> Update(int Id, UpdateBlogPostDTO dto)
+        public async Task<IActionResult> Update(int BlogPostId, UpdateBlogPostDTO dto)
         {
           
-            var updated = await _repo.UpdateAsync(Id, dto);
+            var updated = await _repo.UpdateAsync(BlogPostId, dto);
             return Ok(_mapper.Map<BlogPostDTO>(updated));
         }
 

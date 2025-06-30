@@ -69,21 +69,24 @@ namespace DrugPreventionAPI.Repositories
 
             if (post == null) throw new KeyNotFoundException();
 
-            // map scalars
-            post.Title = dto.Title;
-            post.Content = dto.Content;
-            post.CoverImageUrl = dto.CoverImageUrl;
+            // Only update if values are provided
+            if (dto.Title != null) post.Title = dto.Title;
+            if (dto.Content != null) post.Content = dto.Content;
+            if (dto.CoverImageUrl != null) post.CoverImageUrl = dto.CoverImageUrl;
 
-            // clear old tag links
-            var old = _ctx.BlogTags.Where(bt => bt.BlogPostId == postId);
-            _ctx.BlogTags.RemoveRange(old);
+            // Only update tags if new ones are provided
+            if (dto.TagIds != null && dto.TagIds.Count > 0)
+            {
+                // Remove old tags
+                var oldTags = _ctx.BlogTags.Where(bt => bt.BlogPostId == postId);
+                _ctx.BlogTags.RemoveRange(oldTags);
 
-            // attach new ones
-            post.BlogTags = dto.TagIds
-                .Select(tid => new BlogTag { BlogPostId = postId, TagId = tid })
-                .ToList();
+                // Add new tags
+                post.BlogTags = dto.TagIds
+                    .Select(tagId => new BlogTag { BlogPostId = postId, TagId = tagId })
+                    .ToList();
+            }
 
-            _ctx.BlogPosts.Update(post);
             await _ctx.SaveChangesAsync();
 
             return post;

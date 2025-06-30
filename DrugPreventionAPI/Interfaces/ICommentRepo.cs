@@ -19,5 +19,7 @@ namespace DrugPreventionAPI.Interfaces
         Task<IEnumerable<Comment>> GetAllByPostIdAsync(int blogPostId);
         Task<IEnumerable<Comment>> GetAllByActivityIdAsync(int activityId);
         Task<IEnumerable<Comment>> GetAllAsync();
+        Task<Comment> AddReplyAsync(CreateReplyDTO dto, int memberId);
+
     }
 }
