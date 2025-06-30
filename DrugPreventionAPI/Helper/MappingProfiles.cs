@@ -110,7 +110,7 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
 
-
+            CreateMap<ConsultationNote, ConsultationNoteDTO>();
             CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();
             CreateMap<AppointmentRequest, AppointmentRequestDTO>();
             CreateMap<Certificate, CertificateDTO>();
