@@ -23,6 +23,25 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CourseMaterial, CourseMaterialReadDTO>();
             CreateMap<UserDTO, User>();
             CreateMap<CourseEnrollment, CourseEnrollmentDTO>();
+            // Entity → DTO
+            CreateMap<BlogPost, BlogPostDTO>()
+                // if your DTO has a plain Tags collection, map via the join table:
+                .ForMember(dest => dest.Tags,
+                    opt => opt.MapFrom(src => src.BlogTags.Select(bt => bt.Tag)));
+
+            // (Optionally, if you want two-way mapping)
+            CreateMap<BlogPostDTO, BlogPost>();
+            CreateMap<Tag, TagDTO>();
+            CreateMap<CreateTagDTO, Tag>();
+            // incoming POST
+            CreateMap<CreateBlogPostDTO, BlogPost>()
+                // ignore ID (won’t be set by the client)
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            // incoming PUT
+            CreateMap<UpdateBlogPostDTO, BlogPost>()
+                // the repo already loads the existing entity (so you don’t overwrite the PK)
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
 
             // 1) QuizSubmissionAnswer → QuizAnswerDTO
             CreateMap<QuizSubmissionAnswer, QuizAnswerDTO>()
@@ -50,7 +69,7 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(d => d.OptionText, o => o.MapFrom(s => s.OptionText));
 
 
-            // Entity -> DTO
+            //  Entity -> DTO
             CreateMap<QuestionBank, QuestionDTO>()
                 .ForMember(d => d.QuestionText, o => o.MapFrom(s => s.QuestionText))
                 .ForMember(d => d.Level, o => o.MapFrom(s => s.Level))
@@ -69,11 +88,9 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateSurveyDTO, Survey>();
 
             // SurveyQuestion
-            CreateMap<SurveySubstance, SurveySubstanceDTO>().ReverseMap();
             CreateMap<SurveyQuestion, SurveyQuestionDTO>()
                 .ForMember(dest => dest.Options,
-                           opt => opt.MapFrom(src => src.SurveyOptions.OrderBy(o => o.Sequence)))
-                .ForMember(d => d.SubstanceName, o => o.MapFrom(s => s.Substance!.Name));
+                           opt => opt.MapFrom(src => src.SurveyOptions.OrderBy(o => o.Sequence)));
             CreateMap<CreateSurveyQuestionDTO, SurveyQuestion>();
 
             // SurveyOption
@@ -109,12 +126,30 @@ namespace DrugPreventionAPI.Helper
             CreateMap<CreateUserInquiryDTO, UserInquiry>()
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
+            // Map entity -> DTO
+            CreateMap<Comment, CommentDTO>();
 
             CreateMap<ConsultationNote, ConsultationNoteDTO>();
+            // Map create-DTO -> entity
+            CreateMap<CreateCommentDTO, Comment>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<UpdateCommentDTO, Comment>()
+    .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+            //
             CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();
             CreateMap<AppointmentRequest, AppointmentRequestDTO>();
-            CreateMap<Certificate, CertificateDTO>();
+
+            // CommunicationAct - ActParticipation
+            CreateMap<CommunicationActivity, CommunicationActivityDTO>();
+            CreateMap<CreateCommunicationActivityDTO, CommunicationActivity>()
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+            CreateMap<ActivityParticipation, ActivityParticipationDTO>();
+            CreateMap<ActivityParticipationDTO, ActivityParticipation>();
+
         }
     }
 }
-//trial commit

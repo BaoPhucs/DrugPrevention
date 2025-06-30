@@ -55,7 +55,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         // Members list their own
-        [HttpGet("myInquiries")]
+        [HttpGet("Member-Inquiries")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> MyInquiries()
         {
