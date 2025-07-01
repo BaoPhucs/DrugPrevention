@@ -42,22 +42,17 @@ namespace DrugPreventionAPI.Repositories
                 .Include(c => c.Replies)
                 .ToListAsync();
         }
-        public async Task<Comment> AddAsync(CreateCommentDTO dto)
+        public async Task<Comment> AddAsync(Comment comment)
         {
             // ✅ Validate it's a root comment (not a reply)
-            if (dto.BlogPostId == null && dto.ActivityId == null)
-                throw new ArgumentException("A root comment must target either a BlogPost or an Activity.");
+            if (comment.ParentCommentId != null && (comment.BlogPostId != null || comment.ActivityId != null))
+                throw new ArgumentException("A reply comment must not target a BlogPost or Activity.");
 
-            if (dto.BlogPostId != null && dto.ActivityId != null)
+            if (comment.BlogPostId != null && comment.ActivityId != null)
                 throw new ArgumentException("A comment must not target both a BlogPost and an Activity.");
-
-            // Map and save
-            var comment = _mapper.Map<Comment>(dto);
-            comment.CreatedDate = DateTime.UtcNow;
 
             _ctx.Comments.Add(comment);
             await _ctx.SaveChangesAsync();
-
             return comment;
         }
 
@@ -88,19 +83,11 @@ namespace DrugPreventionAPI.Repositories
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
-        public async Task<Comment> AddReplyAsync(CreateReplyDTO dto, int memberId)
+        public async Task<Comment> AddReplyAsync(Comment reply)
         {
-            var parent = await _ctx.Comments.FindAsync(dto.ParentCommentId);
+            var parent = await _ctx.Comments.FindAsync(reply.ParentCommentId);
             if (parent == null)
                 throw new ArgumentException("Parent comment not found.");
-
-            var reply = new Comment
-            {
-                ParentCommentId = dto.ParentCommentId,
-                Content = dto.Content,
-                CreatedDate = DateTime.UtcNow,
-                MemberId = memberId
-            };
 
             _ctx.Comments.Add(reply);
             await _ctx.SaveChangesAsync();

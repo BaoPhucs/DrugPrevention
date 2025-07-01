@@ -16,11 +16,11 @@ namespace DrugPreventionAPI.Controllers
         private readonly IMapper _mapper;
         public BlogPostController(IBlogPostRepo repo, IMapper mapper) => (_repo, _mapper) = (repo, mapper);
 
-        [HttpGet]
+        [HttpGet("get-all-blogpost")]
         [AllowAnonymous]
         public async Task<IActionResult> GetAll() => Ok(_mapper.Map<IEnumerable<BlogPostDTO>>(await _repo.GetAllAsync()));
 
-        [HttpGet("{id}")]
+        [HttpGet("get-blogpost-by-id/{id}")]
         [AllowAnonymous]
         public async Task<IActionResult> Get(int id)
         {
@@ -29,8 +29,17 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<BlogPostDTO>(bp));
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Admin, Manager")]
+        [HttpGet("get-blogpost-by-tag/{tagId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByTag(int tagId)
+        {
+            var bp = await _repo.GetByTagId(tagId);
+            if (bp == null) return NotFound();
+            return Ok(_mapper.Map<BlogPostDTO>(bp));
+        }
+
+        [HttpPost("create-blogpost")]
+        [Authorize(Roles = "Manager, Staff, Consultant")]
         public async Task<IActionResult> Create(CreateBlogPostDTO dto)
         {
             var post = _mapper.Map<BlogPost>(dto);
@@ -40,17 +49,17 @@ namespace DrugPreventionAPI.Controllers
             return CreatedAtAction(nameof(Get), new { id = created.Id }, _mapper.Map<BlogPostDTO>(created));
         }
 
-        [HttpPut("{BlogPostId}")]
-        [Authorize(Roles = "Admin, Manager")]
+        [HttpPut("update-blogpost/{BlogPostId}")]
+        [Authorize(Roles = "Manager, Staff, Consultant")]
         public async Task<IActionResult> Update(int BlogPostId, UpdateBlogPostDTO dto)
         {
-          
+
             var updated = await _repo.UpdateAsync(BlogPostId, dto);
             return Ok(_mapper.Map<BlogPostDTO>(updated));
         }
 
-        [HttpDelete("{BlogPostId}")]
-        [Authorize(Roles = "Admin, Manager")]
+        [HttpDelete("delete-blogpost/{BlogPostId}")]
+        [Authorize(Roles = "Manager, Staff, Consultant")]
         public async Task<IActionResult> Delete(int BlogPostId)
         {
             await _repo.DeleteAsync(BlogPostId);

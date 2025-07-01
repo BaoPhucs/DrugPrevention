@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Security.Claims;
+using AutoMapper;
 using DrugPreventionAPI.Data;
 using DrugPreventionAPI.DTO;
 using DrugPreventionAPI.Interfaces;
@@ -25,13 +26,13 @@ namespace DrugPreventionAPI.Controllers
             _mapper = mapper;
             _repo = repo;
         }
-         
+
         [HttpGet("Get-All-Activities")]
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<CommunicationActivityDTO>>> GetAll()
         {
             var activities = await _context.CommunicationActivities.ToListAsync();
-            return Ok(_mapper.Map<List<CommunicationActivityDTO>>(activities));
+            return Ok(activities);
         }
 
         [HttpGet("GetById/{id}")]
@@ -40,15 +41,23 @@ namespace DrugPreventionAPI.Controllers
         {
             var activity = await _context.CommunicationActivities.FindAsync(id);
             if (activity == null) return NotFound();
-            return Ok(_mapper.Map<CommunicationActivityDTO>(activity));
+            return Ok(activity);
         }
 
         [HttpPost("Create-Activity")]
-        [Authorize(Roles = "Admin,Staff, Manager")]
+        [Authorize(Roles = "Staff, Manager, Consultant")]
         public async Task<ActionResult<CommunicationActivityDTO>> Create(CreateCommunicationActivityDTO dto)
         {
             var entity = _mapper.Map<CommunicationActivity>(dto);
             entity.Status = "Pending"; // default
+
+            // Gán CreatedById từ user hiện tại
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(claim, out var userId))
+            {
+                entity.CreatedById = userId;
+            }
+
             _context.CommunicationActivities.Add(entity);
             await _context.SaveChangesAsync();
 
@@ -56,18 +65,58 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpPut("Update-activity/{id}")]
-        [Authorize(Roles = "Admin,Staff, Manager")]
+        [Authorize(Roles = "Consultant, Staff, Manager")]
         public async Task<ActionResult<CommunicationActivityDTO>> Update(int id, CreateCommunicationActivityDTO dto)
         {
-            var activity = _mapper.Map<CommunicationActivity>(dto);
-            var updated = await _repo.UpdateAsync(id, activity);
-            if (updated == null) return NotFound();
+            var existing = await _context.CommunicationActivities.FindAsync(id);
+            if (existing == null) return NotFound();
 
-            return Ok(_mapper.Map<CommunicationActivityDTO>(updated));
+            // Lấy userId từ claim một cách an toàn
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
+            {
+                return Forbid("User ID missing or invalid.");
+            }
+
+            // Kiểm tra quyền sở hữu
+            if (existing.CreatedById.HasValue && existing.CreatedById != userId)
+            {
+                return Forbid("You do not have permission to update this activity.");
+            }
+
+            // Cập nhật thủ công các thuộc tính, chỉ khi giá trị hợp lệ và không phải mặc định
+            if (dto.Title != null && !string.IsNullOrWhiteSpace(dto.Title) && dto.Title != "string")
+            {
+                existing.Title = dto.Title;
+            }
+
+            if (dto.Description != null && !string.IsNullOrWhiteSpace(dto.Description) && dto.Description != "string")
+            {
+                existing.Description = dto.Description;
+            }
+
+            if (dto.EventDate != default && dto.EventDate > DateTime.UtcNow)
+            {
+                existing.EventDate = dto.EventDate;
+            }
+
+            if (dto.Location != null && !string.IsNullOrWhiteSpace(dto.Location) && dto.Location != "string")
+            {
+                existing.Location = dto.Location;
+            }
+
+            if (dto.Capacity.HasValue && dto.Capacity > 0) // Loại bỏ giá trị 0 mặc định
+            {
+                existing.Capacity = dto.Capacity;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(_mapper.Map<CommunicationActivityDTO>(existing));
         }
 
         [HttpDelete("Delete-Activity/{id}")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "Manager")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _repo.DeleteAsync(id);

@@ -28,8 +28,8 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<TagDTO>(t));
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Admin, Manager")]
+        [HttpPost("create-tag")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> Create(CreateTagDTO dto)
         {
             var tag = _mapper.Map<Tag>(dto);
@@ -37,8 +37,8 @@ namespace DrugPreventionAPI.Controllers
             return CreatedAtAction(nameof(Get), new { tagid = created.Id }, _mapper.Map<TagDTO>(created));
         }
 
-        [HttpPut("{tagid}")]
-        [Authorize(Roles = "Admin, Manager")]
+        [HttpPut("update-tag/{tagid}")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> Update(int tagid, CreateTagDTO dto)
         {
             var tag = await _repo.GetByIdAsync(tagid);
@@ -48,8 +48,8 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<TagDTO>(updated));
         }
 
-        [HttpDelete("{tagid}")]
-        [Authorize(Roles = "Admin, Manager")]
+        [HttpDelete("deleete-tag/{tagid}")]
+        [Authorize(Roles = "Manager, Consultant, Staff")]
         public async Task<IActionResult> Delete(int tagid)
         {
             await _repo.DeleteAsync(tagid);
