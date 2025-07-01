@@ -58,38 +58,66 @@ namespace DrugPreventionAPI.Repositories
 
                    .FirstOrDefaultAsync(bp => bp.Id == id);
 
+        public async Task<BlogPost> GetByTagId(int tagId)
+        {
+            return await _ctx.BlogPosts
+                .Include(bp => bp.BlogTags)
+                    .ThenInclude(bt => bt.Tag)
+                .Include(bp => bp.Comments).ThenInclude(c => c.Replies)
+                .FirstOrDefaultAsync(bp => bp.BlogTags.Any(bt => bt.TagId == tagId));
+        }
 
         public async Task<BlogPost> UpdateAsync(int postId, UpdateBlogPostDTO dto)
         {
-
-
+            // Lấy blog post từ database với các navigation properties
             var post = await _ctx.BlogPosts
-         .Include(bp => bp.BlogTags)           // need existing tags
-         .FirstOrDefaultAsync(bp => bp.Id == postId);
+                .Include(bp => bp.BlogTags)
+                .FirstOrDefaultAsync(bp => bp.Id == postId);
 
             if (post == null) throw new KeyNotFoundException();
 
-            // Only update if values are provided
-            if (dto.Title != null) post.Title = dto.Title;
-            if (dto.Content != null) post.Content = dto.Content;
-            if (dto.CoverImageUrl != null) post.CoverImageUrl = dto.CoverImageUrl;
-
-            // Only update tags if new ones are provided
-            if (dto.TagIds != null && dto.TagIds.Count > 0)
+            // Chỉ cập nhật các thuộc tính khi giá trị được cung cấp và không phải giá trị mặc định
+            if (dto.Title != null && !string.IsNullOrWhiteSpace(dto.Title))
             {
-                // Remove old tags
+                post.Title = dto.Title;
+            }
+
+            if (dto.Content != null && !string.IsNullOrWhiteSpace(dto.Content))
+            {
+                post.Content = dto.Content;
+            }
+
+            if (dto.CoverImageUrl != null && !string.IsNullOrWhiteSpace(dto.CoverImageUrl))
+            {
+                post.CoverImageUrl = dto.CoverImageUrl;
+            }
+
+            // Xử lý cập nhật TagIds chỉ khi danh sách không rỗng và không chứa giá trị mặc định không hợp lệ
+            if (dto.TagIds != null && dto.TagIds.Any() && !dto.TagIds.All(id => id == 0))
+            {
+                // Xóa các tag cũ
                 var oldTags = _ctx.BlogTags.Where(bt => bt.BlogPostId == postId);
                 _ctx.BlogTags.RemoveRange(oldTags);
 
-                // Add new tags
+                // Thêm các tag mới
                 post.BlogTags = dto.TagIds
+                    .Where(tagId => tagId != 0) // Loại bỏ giá trị mặc định 0
                     .Select(tagId => new BlogTag { BlogPostId = postId, TagId = tagId })
                     .ToList();
             }
 
+            // Cập nhật ngày cập nhật
+            post.UpdatedDate = DateTime.UtcNow;
+
             await _ctx.SaveChangesAsync();
 
-            return post;
+            // Tải lại dữ liệu đầy đủ để trả về
+            return await _ctx.BlogPosts
+                .Include(bp => bp.BlogTags)
+                .ThenInclude(bt => bt.Tag)
+                .Include(bp => bp.Comments)
+                .ThenInclude(c => c.Replies)
+                .FirstOrDefaultAsync(bp => bp.Id == postId) ?? post;
         }
 
 

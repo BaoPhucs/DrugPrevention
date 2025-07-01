@@ -29,7 +29,7 @@ namespace DrugPreventionAPI
                     .GetConnectionString("DefaultConnection")));
 
             builder.Services.AddHttpClient();
-
+            builder.Services.AddHttpContextAccessor();
             // 2. Đăng ký các Service/Repository
             builder.Services.AddScoped<IInquiryAssignmentRepository, InquiryAssignmentRepository>();
             builder.Services.AddScoped<IInquiryCommentRepository, InquiryCommentRepository>();

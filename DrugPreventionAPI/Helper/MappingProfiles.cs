@@ -125,6 +125,10 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
             CreateMap<CreateUserInquiryDTO, UserInquiry>()
                 .ForMember(d => d.LastUpdated, opt => opt.MapFrom(_ => DateTime.UtcNow));
+            CreateMap<UpdateUserInquiryDTO, UserInquiry>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore()) // Không cập nhật Id
+            .ForMember(dest => dest.CreatedById, opt => opt.Ignore()) // Không cập nhật CreatedById
+            .ForMember(dest => dest.CreatedDate, opt => opt.Ignore()); // Không cập nhật CreatedDate
 
             // Map entity -> DTO
             CreateMap<Comment, CommentDTO>();
@@ -136,7 +140,41 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<UpdateCommentDTO, Comment>()
-    .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+            CreateMap<UpdateBlogPostDTO, BlogPost>()
+    .ForMember(dest => dest.Id, opt => opt.Ignore())
+    .ForMember(dest => dest.CreatedById, opt => opt.Ignore())
+    .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+    .ForMember(dest => dest.Title, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Title)))
+    .ForMember(dest => dest.Content, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Content)))
+    .ForMember(dest => dest.CoverImageUrl, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.CoverImageUrl)))
+    .AfterMap((src, dest) =>
+    {
+        if (src.TagIds != null && src.TagIds.Any() && !src.TagIds.All(id => id == 0))
+        {
+            var oldTags = dest.BlogTags?.ToList() ?? new List<BlogTag>();
+            foreach (var tag in oldTags)
+            {
+                dest.BlogTags.Remove(tag);
+            }
+            dest.BlogTags = src.TagIds
+                .Where(tagId => tagId != 0)
+                .Select(tagId => new BlogTag { BlogPostId = dest.Id, TagId = tagId })
+                .ToList();
+        }
+        dest.UpdatedDate = DateTime.UtcNow;
+    });
+
+            CreateMap<CreateCommunicationActivityDTO, CommunicationActivity>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Status, opt => opt.Ignore()) // Giữ nguyên Status mặc định
+                .ForMember(dest => dest.Title, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Title)))
+                .ForMember(dest => dest.Description, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Description)))
+                .ForMember(dest => dest.EventDate, opt => opt.Condition(src => src.EventDate != default))
+                .ForMember(dest => dest.Location, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Location)))
+                .ForMember(dest => dest.Capacity, opt => opt.Condition(src => src.Capacity.HasValue && src.Capacity > 0));
 
             //
             CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();

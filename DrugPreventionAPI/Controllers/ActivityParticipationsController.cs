@@ -25,7 +25,7 @@ namespace DrugPreventionAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("admin-manager-staff-only")]
+        [HttpGet("get-all-activity-participation")]
         [Authorize(Roles = "Admin, Manager, Staff")]
         public async Task<ActionResult<IEnumerable<ActivityParticipationDTO>>> GetAll()
         {
@@ -33,7 +33,7 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<IEnumerable<ActivityParticipationDTO>>(participations));
         }
 
-        [HttpGet("by-activity/{activityId}")]
+        [HttpGet("get-by-activity/{activityId}")]
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<ActivityParticipationDTO>>> GetByActivity(int activityId)
         {
@@ -41,7 +41,7 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<List<ActivityParticipationDTO>>(participations));
         }
 
-        [HttpPost("Member-Participation-ActivityIdOnly")]
+        [HttpPost("register-activity")]
         [Authorize(Roles = "Member")]
         public async Task<ActionResult<ActivityParticipationDTO>> Register([FromBody] int activityId)
         {
@@ -63,7 +63,7 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<ActivityParticipationDTO>(created));
         }
 
-        [HttpDelete("manager-admin-delete/{id}")]
+        [HttpDelete("delete/{id}")]
         [Authorize(Roles = "Admin, Manager")]
         public async Task<IActionResult> DeleteMember(int id)
         {
@@ -71,7 +71,7 @@ namespace DrugPreventionAPI.Controllers
             return success ? NoContent() : NotFound();
         }
 
-        [HttpPut("ManageStatus/{id}/status")]
+        [HttpPut("update-status/{id}")]
         [Authorize(Roles = "Admin,Manager, Staff")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
         {
@@ -80,7 +80,7 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<ActivityParticipationDTO>(updated));
         }
 
-        [HttpPut("Member-cancel/{activityId}/status")]
+        [HttpPut("cancel/{activityId}")]
         [Authorize(Roles = "Member")]
         public async Task<IActionResult> Cancel(int activityId)
         {

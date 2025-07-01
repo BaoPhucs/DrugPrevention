@@ -48,10 +48,9 @@ namespace DrugPreventionAPI.Repositories
         public async Task<IEnumerable<UserInquiry>> GetByUserAsync(int userId)
         =>
             await _ctx.UserInquiries
-                    .Where(ui => ui.CreatedById == userId)
-                    .Include(ui => ui.CreatedBy)
-                              .Include(ui => ui.CreatedById)
-
+                    .Where(ui => ui.CreatedById == userId) // Lọc theo CreatedById
+                    .Include(ui => ui.InquiryAssignments) // Bao gồm navigation properties nếu cần
+                    .Include(ui => ui.InquiryComments)
                     .ToListAsync();
 
 
