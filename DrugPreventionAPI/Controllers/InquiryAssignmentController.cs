@@ -36,6 +36,14 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<InquiryAssignmentDTO>(a));
         }
 
+        [HttpGet("get-by-assigned-to/{assignedToId}")]
+        [Authorize(Roles = "Staff,Consultant")]
+        public async Task<IActionResult> GetByAssignedTo(int assignedToId)
+        {
+            var list = await _repo.GetByAssignedToIdIdAsync(assignedToId);
+            return Ok(_mapper.Map<IEnumerable<InquiryAssignmentDTO>>(list));
+        }
+
         [HttpPost("create-inquiry-assignment")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> Create(CreateInquiryAssignment dto)

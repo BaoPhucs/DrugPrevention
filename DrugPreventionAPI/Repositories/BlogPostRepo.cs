@@ -76,18 +76,18 @@ namespace DrugPreventionAPI.Repositories
 
             if (post == null) throw new KeyNotFoundException();
 
-            // Chỉ cập nhật các thuộc tính khi giá trị được cung cấp và không phải giá trị mặc định
-            if (dto.Title != null && !string.IsNullOrWhiteSpace(dto.Title))
+            // Chỉ cập nhật các thuộc tính khi giá trị được cung cấp, hợp lệ, và không phải giá trị mặc định
+            if (dto.Title != null && !string.IsNullOrWhiteSpace(dto.Title) && dto.Title != "string")
             {
                 post.Title = dto.Title;
             }
 
-            if (dto.Content != null && !string.IsNullOrWhiteSpace(dto.Content))
+            if (dto.Content != null && !string.IsNullOrWhiteSpace(dto.Content) && dto.Content != "string")
             {
                 post.Content = dto.Content;
             }
 
-            if (dto.CoverImageUrl != null && !string.IsNullOrWhiteSpace(dto.CoverImageUrl))
+            if (dto.CoverImageUrl != null && !string.IsNullOrWhiteSpace(dto.CoverImageUrl) && dto.CoverImageUrl != "string")
             {
                 post.CoverImageUrl = dto.CoverImageUrl;
             }
@@ -99,14 +99,14 @@ namespace DrugPreventionAPI.Repositories
                 var oldTags = _ctx.BlogTags.Where(bt => bt.BlogPostId == postId);
                 _ctx.BlogTags.RemoveRange(oldTags);
 
-                // Thêm các tag mới
+                // Thêm các tag mới, loại bỏ giá trị 0
                 post.BlogTags = dto.TagIds
-                    .Where(tagId => tagId != 0) // Loại bỏ giá trị mặc định 0
+                    .Where(tagId => tagId != 0)
                     .Select(tagId => new BlogTag { BlogPostId = postId, TagId = tagId })
                     .ToList();
             }
 
-            // Cập nhật ngày cập nhật
+            // Cập nhật ngày cập nhật nếu có thay đổi
             post.UpdatedDate = DateTime.UtcNow;
 
             await _ctx.SaveChangesAsync();
