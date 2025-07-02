@@ -36,5 +36,14 @@ namespace DrugPreventionAPI.Repositories
             await _ctx.SaveChangesAsync();
             return a;
         }
+
+        public async Task<IEnumerable<InquiryAssignment>> GetByAssignedToIdIdAsync(int assignedToId)
+        {
+            return await _ctx.InquiryAssignments
+                .Include(x => x.AssignedTo)
+                .Include(x => x.AssignedBy)
+                .Where(x => x.AssignedToId == assignedToId)
+                .ToListAsync();
+        }
     }
 }
