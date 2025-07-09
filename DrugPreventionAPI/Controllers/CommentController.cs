@@ -22,29 +22,30 @@ namespace DrugPreventionAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpPost("create-comment")]
+        [HttpPost("create-blogpost-comment")]
         [Authorize]
-        public async Task<IActionResult> Create([FromBody] CreateCommentDTO dto)
+        public async Task<IActionResult> CreateBlogPostComment([FromBody] CreateBlogPostCommentDTO dto)
         {
             if (dto == null || dto.Content == null)
                 return BadRequest("Missing content.");
 
-            Console.WriteLine($"Incoming DTO: BlogPostId={dto.BlogPostId}, ActivityId={dto.ActivityId}");
-
-            var comment = _mapper.Map<Comment>(dto);
-            comment.MemberId = CurrentUserId; // Gán ID người dùng hiện tại
-            comment.CreatedDate = DateTime.UtcNow;
-
-            if (comment.BlogPostId == null && comment.ActivityId == null)
-                return BadRequest("A root comment must target either a BlogPost or an Activity.");
-
-            if (comment.BlogPostId != null && comment.ActivityId != null)
-                return BadRequest("A comment must not target both a BlogPost and an Activity.");
-
-            var created = await _repo.AddAsync(comment);
+            var comment = await _repo.AddBlogPostCommentAsync(dto, CurrentUserId);
             return CreatedAtAction(nameof(GetById),
-                                   new { id = created.Id },
-                                   _mapper.Map<CommentDTO>(created));
+                                  new { id = comment.Id },
+                                  _mapper.Map<CommentDTO>(comment));
+        }
+
+        [HttpPost("create-activity-comment")]
+        [Authorize]
+        public async Task<IActionResult> CreateActivityComment([FromBody] CreateActivityCommentDTO dto)
+        {
+            if (dto == null || dto.Content == null)
+                return BadRequest("Missing content.");
+
+            var comment = await _repo.AddActivityCommentAsync(dto, CurrentUserId);
+            return CreatedAtAction(nameof(GetById),
+                                  new { id = comment.Id },
+                                  _mapper.Map<CommentDTO>(comment));
         }
 
         [HttpGet("get/{id}")]
@@ -104,11 +105,11 @@ namespace DrugPreventionAPI.Controllers
             {
                 ParentCommentId = dto.ParentCommentId,
                 Content = dto.Content,
-                MemberId = CurrentUserId, // Gán ID người dùng hiện tại
+                MemberId = CurrentUserId,
                 CreatedDate = DateTime.UtcNow
             };
 
-            var created = await _repo.AddAsync(reply);
+            var created = await _repo.AddReplyAsync(reply);
             return CreatedAtAction(nameof(GetById),
                 new { id = created.Id },
                 _mapper.Map<CommentDTO>(created));

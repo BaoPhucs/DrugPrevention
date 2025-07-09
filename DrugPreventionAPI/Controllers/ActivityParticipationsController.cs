@@ -47,7 +47,7 @@ namespace DrugPreventionAPI.Controllers
         {
             var memberId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");// from claims
 
-            var exists = await _repo.GetByMemberAndActivityAsync(memberId, activityId); if (exists != null)
+            var exists = await _repo.GetByMemberAndActivityAsync(memberId, activityId); 
                 if (exists != null)
                     return BadRequest("Already registered.");
 

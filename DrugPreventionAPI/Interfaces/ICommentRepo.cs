@@ -11,7 +11,8 @@ namespace DrugPreventionAPI.Interfaces
 
 
 
-        Task<Comment> AddAsync(Comment comment);
+        Task<Comment> AddBlogPostCommentAsync(CreateBlogPostCommentDTO dto, int memberId);
+        Task<Comment> AddActivityCommentAsync(CreateActivityCommentDTO dto, int memberId);
         Task<Comment> UpdateAsync(int id, UpdateCommentDTO dto);
         Task DeleteAsync(int id);
         Task<Comment?> GetByIdAsync(int id);

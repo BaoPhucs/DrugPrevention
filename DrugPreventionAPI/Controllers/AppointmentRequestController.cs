@@ -43,8 +43,8 @@ namespace DrugPreventionAPI.Controllers
                                           .ToDateTime(slot.StartTime.Value);
 
             // 3) Kiểm tra đặt trước 24h
-            if (appointmentDateTime <= DateTime.UtcNow.AddHours(12))
-                return BadRequest("Bạn phải đặt lịch ít nhất 12 giờ trước khi cuộc hẹn.");
+            if (appointmentDateTime <= DateTime.UtcNow.AddHours(24))
+                return BadRequest("Bạn phải đặt lịch ít nhất 24 giờ trước khi cuộc hẹn.");
 
             // 4) Tiếp tục tạo request
             var req = new AppointmentRequest

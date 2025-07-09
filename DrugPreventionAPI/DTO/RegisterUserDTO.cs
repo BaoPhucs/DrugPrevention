@@ -27,10 +27,14 @@ namespace DrugPreventionAPI.DTO
             }
         }
 
+        [Required(ErrorMessage = "Số điện thoại là bắt buộc.")]
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "Số điện thoại không hợp lệ.")]
         public string Phone { get; set; }
 
         public string Email { get; set; }
 
+        [Required]
+        [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự.")]
         public string Password { get; set; }
 
         public string AgeGroup { get; set; }

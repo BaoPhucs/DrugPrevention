@@ -135,7 +135,7 @@ namespace DrugPreventionAPI.Helper
 
             CreateMap<ConsultationNote, ConsultationNoteDTO>();
             // Map create-DTO -> entity
-            CreateMap<CreateCommentDTO, Comment>()
+            CreateMap<CreateBlogPostCommentDTO, Comment>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));

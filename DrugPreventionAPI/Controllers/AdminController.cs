@@ -33,7 +33,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("get-user/{userId}")]
-        [Authorize(Roles = "Admin, Manager, Consultant, Staff")]
+        [Authorize]
         public async Task<IActionResult> GetUserById(int userId)
         {
             var user = await _adminRepository.GetByIdAsync(userId);

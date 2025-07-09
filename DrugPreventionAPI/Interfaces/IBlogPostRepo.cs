@@ -7,9 +7,13 @@ namespace DrugPreventionAPI.Interfaces
     {
         Task<IEnumerable<BlogPost>> GetAllAsync();
         Task<BlogPost?> GetByIdAsync(int id);
-        Task<BlogPost> GetByTagId(int tagId);
+        Task<IEnumerable<BlogPost>> GetByTagId(int tagId);
         Task<BlogPost> AddAsync(BlogPost post, IEnumerable<int> tagIds);
         Task<BlogPost> UpdateAsync(int id, UpdateBlogPostDTO dto);
         Task DeleteAsync(int id);
+        Task<BlogPost?> SubmitForApprovalAsync(int id); // Gửi phê duyệt
+        Task<BlogPost?> ApproveAsync(int id); // Phê duyệt
+        Task<BlogPost?> RejectAsync(int id, string? reviewComments); // Từ chối với lý do
+        Task<BlogPost?> PublishAsync(int id); // Đăng bài
     }
 }

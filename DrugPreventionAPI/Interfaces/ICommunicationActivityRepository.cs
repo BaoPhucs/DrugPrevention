@@ -9,6 +9,9 @@ namespace DrugPreventionAPI.Interfaces
         Task<CommunicationActivity> CreateAsync(CommunicationActivity activity);
         Task<CommunicationActivity?> UpdateAsync(int id, CommunicationActivity updated);
         Task<bool> DeleteAsync(int id);
-
+        Task<CommunicationActivity?> SubmitForApprovalAsync(int id); // Gửi phê duyệt
+        Task<CommunicationActivity?> ApproveAsync(int id); // Phê duyệt
+        Task<CommunicationActivity?> RejectAsync(int id, string? reviewComments); // Từ chối
+        Task<CommunicationActivity?> PublishAsync(int id); // Đăng bài
     }
 }

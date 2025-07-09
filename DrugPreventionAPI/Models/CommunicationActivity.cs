@@ -23,6 +23,8 @@ public partial class CommunicationActivity
 
     public DateTime? CreatedDate { get; set; }
 
+    public string? ReviewComments { get; set; }
+
     public ICollection<ActivityParticipation> ActivityParticipations { get; set; } 
 
     public User? CreatedBy { get; set; }

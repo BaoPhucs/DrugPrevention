@@ -116,12 +116,47 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpDelete("Delete-Activity/{id}")]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Manager, Staff")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _repo.DeleteAsync(id);
             return result ? NoContent() : NotFound();
         }
 
+        [HttpPost("Submit-For-Approval/{id}")]
+        [Authorize(Roles = "Staff")]
+        public async Task<ActionResult<CommunicationActivityDTO>> SubmitForApproval(int id)
+        {
+            var activity = await _repo.SubmitForApprovalAsync(id);
+            if (activity == null) return BadRequest("Cannot submit for approval. Activity may not be in Pending status.");
+            return Ok(_mapper.Map<CommunicationActivityDTO>(activity));
+        }
+
+        [HttpPost("Approve/{id}")]
+        [Authorize(Roles = "Manager")]
+        public async Task<ActionResult<CommunicationActivityDTO>> Approve(int id)
+        {
+            var activity = await _repo.ApproveAsync(id);
+            if (activity == null) return BadRequest("Cannot approve. Activity may not be in Submitted status.");
+            return Ok(_mapper.Map<CommunicationActivityDTO>(activity));
+        }
+
+        [HttpPost("Reject/{id}")]
+        [Authorize(Roles = "Manager")]
+        public async Task<ActionResult<CommunicationActivityDTO>> Reject(int id, [FromQuery] string? reviewComments)
+        {
+            var activity = await _repo.RejectAsync(id, reviewComments);
+            if (activity == null) return BadRequest("Cannot reject. Activity may not be in Submitted status.");
+            return Ok(_mapper.Map<CommunicationActivityDTO>(activity));
+        }
+
+        [HttpPost("Publish/{id}")]
+        [Authorize(Roles = "Manager")]
+        public async Task<ActionResult<CommunicationActivityDTO>> Publish(int id)
+        {
+            var activity = await _repo.PublishAsync(id);
+            if (activity == null) return BadRequest("Cannot publish. Activity may not be in Approved status.");
+            return Ok(_mapper.Map<CommunicationActivityDTO>(activity));
+        }
     }
 }

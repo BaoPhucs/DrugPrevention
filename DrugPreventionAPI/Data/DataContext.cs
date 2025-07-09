@@ -157,7 +157,13 @@ public partial class DataContext : DbContext
                 .HasMaxLength(200)
                 .IsUnicode(false);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
-
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.ReviewComments)
+                .HasMaxLength(int.MaxValue)
+                .IsUnicode(false);
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.BlogPosts)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_BlogPost_Author");
@@ -240,10 +246,12 @@ public partial class DataContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Pending");
+            entity.Property(e => e.ReviewComments)
+                .HasMaxLength(int.MaxValue)
+                .IsUnicode(false);
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
                 .IsUnicode(false);
-
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.CommunicationActivities)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_CommunicationActivity_Creator");

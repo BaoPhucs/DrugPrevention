@@ -1,9 +1,8 @@
 ﻿namespace DrugPreventionAPI.DTO
 {
-    public class CreateCommentDTO
+    public class CreateBlogPostCommentDTO
     {
         public int? BlogPostId { get; set; }
-        public int? ActivityId { get; set; }
         public string Content { get; set; } = null!;
     }
 }

@@ -58,13 +58,15 @@ namespace DrugPreventionAPI.Repositories
 
                    .FirstOrDefaultAsync(bp => bp.Id == id);
 
-        public async Task<BlogPost> GetByTagId(int tagId)
+        public async Task<IEnumerable<BlogPost>> GetByTagId(int tagId)
         {
             return await _ctx.BlogPosts
                 .Include(bp => bp.BlogTags)
                     .ThenInclude(bt => bt.Tag)
-                .Include(bp => bp.Comments).ThenInclude(c => c.Replies)
-                .FirstOrDefaultAsync(bp => bp.BlogTags.Any(bt => bt.TagId == tagId));
+                .Include(bp => bp.Comments)
+                    .ThenInclude(c => c.Replies)
+                .Where(bp => bp.BlogTags.Any(bt => bt.TagId == tagId))
+                .ToListAsync();
         }
 
         public async Task<BlogPost> UpdateAsync(int postId, UpdateBlogPostDTO dto)
@@ -120,6 +122,46 @@ namespace DrugPreventionAPI.Repositories
                 .FirstOrDefaultAsync(bp => bp.Id == postId) ?? post;
         }
 
+        public async Task<BlogPost?> SubmitForApprovalAsync(int id)
+        {
+            var post = await _ctx.BlogPosts.FindAsync(id);
+            if (post == null || post.Status != "Pending") return null;
 
+            post.Status = "Submitted";
+            await _ctx.SaveChangesAsync();
+            return post;
+        }
+
+        public async Task<BlogPost?> ApproveAsync(int id)
+        {
+            var post = await _ctx.BlogPosts.FindAsync(id);
+            if (post == null || post.Status != "Submitted") return null;
+
+            post.Status = "Approved";
+            await _ctx.SaveChangesAsync();
+            return post;
+        }
+
+        public async Task<BlogPost?> RejectAsync(int id, string? reviewComments)
+        {
+            var post = await _ctx.BlogPosts.FindAsync(id);
+            if (post == null || post.Status != "Submitted") return null;
+
+            post.Status = "Rejected";
+            post.ReviewComments = reviewComments; // Ghi lý do từ chối
+            await _ctx.SaveChangesAsync();
+            return post;
+        }
+
+        public async Task<BlogPost?> PublishAsync(int id)
+        {
+            var post = await _ctx.BlogPosts.FindAsync(id);
+            if (post == null || post.Status != "Approved") return null;
+
+            post.Status = "Published";
+            // Logic giả lập đăng bài lên hệ thống (có thể mở rộng)
+            await _ctx.SaveChangesAsync();
+            return post;
+        }
     }
 }

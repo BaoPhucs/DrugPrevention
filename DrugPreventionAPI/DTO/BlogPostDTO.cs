@@ -9,6 +9,8 @@
         public DateTime CreatedDate { get; set; }
         public DateTime UpdatedDate { get; set; }
         public int? CreatedById { get; set; }
+        public string? Status { get; set; }
+        public string? ReviewComments { get; set; }
         public IEnumerable<TagDTO> Tags { get; set; } = Array.Empty<TagDTO>();
         public IEnumerable<CommentDTO>? Comments { get; set; }
 

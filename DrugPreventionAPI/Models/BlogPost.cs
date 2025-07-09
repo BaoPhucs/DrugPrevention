@@ -21,6 +21,10 @@ public partial class BlogPost
 
     public User? CreatedBy { get; set; }
 
+    public string? Status { get; set; } 
+
+    public string? ReviewComments { get; set; }
+
     public ICollection<Tag> Tags { get; set; }
 
     public ICollection<BlogTag> BlogTags { get; set; }

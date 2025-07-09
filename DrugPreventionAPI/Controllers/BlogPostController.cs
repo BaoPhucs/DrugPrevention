@@ -35,7 +35,7 @@ namespace DrugPreventionAPI.Controllers
         {
             var bp = await _repo.GetByTagId(tagId);
             if (bp == null) return NotFound();
-            return Ok(_mapper.Map<BlogPostDTO>(bp));
+            return Ok(_mapper.Map<IEnumerable<BlogPostDTO>>(bp));
         }
 
         [HttpPost("create-blogpost")]

@@ -27,7 +27,7 @@ namespace DrugPreventionAPI.Services
         public override Task StartAsync(CancellationToken cancellationToken)
         {
             // Chạy lần đầu sau 1 phút, sau đó cứ 5 phút chạy tiếp
-            _timer = new Timer(DoWork, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+            _timer = new Timer(DoWork, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5));
             return Task.CompletedTask;
         }
 

@@ -86,6 +86,45 @@ namespace DrugPreventionAPI.Repositories
             return true;
         }
 
+        public async Task<CommunicationActivity?> SubmitForApprovalAsync(int id)
+        {
+            var activity = await _context.CommunicationActivities.FindAsync(id);
+            if (activity == null || activity.Status != "Pending") return null;
 
+            activity.Status = "Submitted";
+            await _context.SaveChangesAsync();
+            return activity;
+        }
+
+        public async Task<CommunicationActivity?> ApproveAsync(int id)
+        {
+            var activity = await _context.CommunicationActivities.FindAsync(id);
+            if (activity == null || activity.Status != "Submitted") return null;
+
+            activity.Status = "Approved";
+            await _context.SaveChangesAsync();
+            return activity;
+        }
+
+        public async Task<CommunicationActivity?> RejectAsync(int id, string? reviewComments)
+        {
+            var activity = await _context.CommunicationActivities.FindAsync(id);
+            if (activity == null || activity.Status != "Submitted") return null;
+
+            activity.Status = "Rejected";
+            activity.ReviewComments = reviewComments; // Ghi lý do reject
+            await _context.SaveChangesAsync();
+            return activity;
+        }
+
+        public async Task<CommunicationActivity?> PublishAsync(int id)
+        {
+            var activity = await _context.CommunicationActivities.FindAsync(id);
+            if (activity == null || activity.Status != "Approved") return null;
+
+            activity.Status = "Published";
+            await _context.SaveChangesAsync();
+            return activity;
+        }
     }
 }

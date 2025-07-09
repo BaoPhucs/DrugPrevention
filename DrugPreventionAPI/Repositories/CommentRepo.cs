@@ -42,14 +42,36 @@ namespace DrugPreventionAPI.Repositories
                 .Include(c => c.Replies)
                 .ToListAsync();
         }
-        public async Task<Comment> AddAsync(Comment comment)
+        public async Task<Comment> AddBlogPostCommentAsync(CreateBlogPostCommentDTO dto, int memberId)
         {
-            // ✅ Validate it's a root comment (not a reply)
-            if (comment.ParentCommentId != null && (comment.BlogPostId != null || comment.ActivityId != null))
-                throw new ArgumentException("A reply comment must not target a BlogPost or Activity.");
+            if (dto.Content == null)
+                throw new ArgumentException("Content is required.");
 
-            if (comment.BlogPostId != null && comment.ActivityId != null)
-                throw new ArgumentException("A comment must not target both a BlogPost and an Activity.");
+            var comment = new Comment
+            {
+                BlogPostId = dto.BlogPostId,
+                Content = dto.Content,
+                MemberId = memberId,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            _ctx.Comments.Add(comment);
+            await _ctx.SaveChangesAsync();
+            return comment;
+        }
+
+        public async Task<Comment> AddActivityCommentAsync(CreateActivityCommentDTO dto, int memberId)
+        {
+            if (dto.Content == null)
+                throw new ArgumentException("Content is required.");
+
+            var comment = new Comment
+            {
+                ActivityId = dto.ActivityId,
+                Content = dto.Content,
+                MemberId = memberId,
+                CreatedDate = DateTime.UtcNow
+            };
 
             _ctx.Comments.Add(comment);
             await _ctx.SaveChangesAsync();
