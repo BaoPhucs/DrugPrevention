@@ -109,7 +109,7 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.CancelReason)
                 .HasMaxLength(500)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.CancelledDate).HasColumnType("datetime");
             entity.Property(e => e.ConsultantId).HasColumnName("ConsultantID");
             entity.Property(e => e.CreatedDate)
@@ -144,7 +144,7 @@ public partial class DataContext : DbContext
             entity.ToTable("BlogPost");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.Content).IsUnicode(false);
+            entity.Property(e => e.Content).IsUnicode(true);
             entity.Property(e => e.CoverImageUrl)
                 .HasMaxLength(255)
                 .IsUnicode(false)
@@ -155,7 +155,7 @@ public partial class DataContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
@@ -163,7 +163,7 @@ public partial class DataContext : DbContext
                 .HasDefaultValue("Pending");
             entity.Property(e => e.ReviewComments)
                 .HasMaxLength(int.MaxValue)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.BlogPosts)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_BlogPost_Author");
@@ -195,7 +195,7 @@ public partial class DataContext : DbContext
             entity.ToTable("Comment");
             entity.HasKey(e => e.Id);
 
-            entity.Property(e => e.Content).IsUnicode(false);
+            entity.Property(e => e.Content).IsUnicode(true);
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Status).HasMaxLength(20).IsUnicode(false).HasDefaultValue("Visible");
 
@@ -205,10 +205,11 @@ public partial class DataContext : DbContext
                   .HasForeignKey(e => e.MemberId)
                   .HasConstraintName("FK_Comment_Member");
 
-            // Quan hệ đệ quy Parent → Replies
+            // Quan hệ đệ quy Parent → Replies với Cascade Delete
             entity.HasOne(e => e.ParentComment)
                   .WithMany(e => e.Replies)
                   .HasForeignKey(e => e.ParentCommentId)
+                  .OnDelete(DeleteBehavior.Cascade) // Thêm Cascade Delete
                   .HasConstraintName("FK_Comment_Parent");
 
             // Quan hệ tới BlogPost
@@ -237,21 +238,21 @@ public partial class DataContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Description).IsUnicode(false);
+            entity.Property(e => e.Description).IsUnicode(true);
             entity.Property(e => e.EventDate).HasColumnType("datetime");
             entity.Property(e => e.Location)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Pending");
             entity.Property(e => e.ReviewComments)
                 .HasMaxLength(int.MaxValue)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.CommunicationActivities)
                 .HasForeignKey(d => d.CreatedById)
                 .HasConstraintName("FK_CommunicationActivity_Creator");
@@ -288,7 +289,7 @@ public partial class DataContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
-            entity.Property(e => e.Notes).IsUnicode(false);
+            entity.Property(e => e.Notes).IsUnicode(true);
 
             entity.HasOne(d => d.Appointment).WithMany(p => p.ConsultationNotes)
                 .HasForeignKey(d => d.AppointmentId)
@@ -312,19 +313,19 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Category)
                 .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.Content).IsUnicode(false);
+                .IsUnicode(true);
+            entity.Property(e => e.Content).IsUnicode(true);
             entity.Property(e => e.CreatedById).HasColumnName("CreatedByID");
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Description).IsUnicode(false);
+            entity.Property(e => e.Description).IsUnicode(true);
             entity.Property(e => e.Image)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Level)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.PassingScore).HasDefaultValue(70);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
@@ -336,10 +337,10 @@ public partial class DataContext : DbContext
                 .HasDefaultValue("Draft");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.ReviewComments)
                 .HasMaxLength(int.MaxValue)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.UpdateById).HasColumnName("UpdateByID");
             entity.Property(e => e.UpdateDate)
                 .HasDefaultValueSql("(getdate())")
@@ -411,13 +412,13 @@ public partial class DataContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Description).IsUnicode(false);
+            entity.Property(e => e.Description).IsUnicode(true);
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Url)
                 .IsUnicode(false)
                 .HasColumnName("URL");
@@ -439,7 +440,7 @@ public partial class DataContext : DbContext
 
             entity.Property(e => e.FileUrl)
                   .HasMaxLength(255)
-                  .IsUnicode(false);
+                  .IsUnicode(true);
 
             entity.HasOne(e => e.Member)
                   .WithMany(u => u.Certificates)
@@ -470,7 +471,7 @@ public partial class DataContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Priority)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.AssignedBy).WithMany(p => p.InquiryAssignmentAssignedBies)
                 .HasForeignKey(d => d.AssignedById)
@@ -494,21 +495,21 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.AttachmentType)
                 .HasMaxLength(50)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.AttachmentUrl)
                 .IsUnicode(false)
                 .HasColumnName("AttachmentURL");
             entity.Property(e => e.CommentById).HasColumnName("CommentByID");
-            entity.Property(e => e.CommentText).IsUnicode(false);
+            entity.Property(e => e.CommentText).IsUnicode(true);
             entity.Property(e => e.CommentType)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.FileName)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.InquiryId).HasColumnName("InquiryID");
 
             entity.HasOne(d => d.CommentBy).WithMany(p => p.InquiryComments)
@@ -527,16 +528,16 @@ public partial class DataContext : DbContext
             entity.ToTable("Notification");
 
             entity.Property(e => e.Id).HasColumnName("ID");
-            entity.Property(e => e.Message).IsUnicode(false);
+            entity.Property(e => e.Message).IsUnicode(true);
             entity.Property(e => e.SendDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Title)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Type)
                 .HasMaxLength(50)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.UserId).HasColumnName("UserID");
 
             entity.HasOne(d => d.User).WithMany(p => p.Notifications)
@@ -556,11 +557,11 @@ public partial class DataContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Category)
                 .HasMaxLength(50)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Level)
                 .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.QuestionText).IsUnicode(false);
+                .IsUnicode(true);
+            entity.Property(e => e.QuestionText).IsUnicode(true);
         });
 
         modelBuilder.Entity<QuestionOption>(entity =>
@@ -575,7 +576,7 @@ public partial class DataContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.OptionText)
                 .HasMaxLength(500)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
 
             entity.HasOne(d => d.Question).WithMany(p => p.QuestionOptions)
@@ -661,10 +662,10 @@ public partial class DataContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Name)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.Surveys)
                 .HasForeignKey(d => d.CreatedById)
@@ -683,7 +684,7 @@ public partial class DataContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.OptionText)
                 .HasMaxLength(500)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
 
             entity.HasOne(d => d.Question).WithMany(p => p.SurveyOptions)
@@ -701,7 +702,7 @@ public partial class DataContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.QuestionText).IsUnicode(false);
+            entity.Property(e => e.QuestionText).IsUnicode(true);
             entity.Property(e => e.SurveyId).HasColumnName("SurveyID");
 
             entity.HasOne(d => d.Survey).WithMany(p => p.SurveyQuestions)
@@ -723,7 +724,7 @@ public partial class DataContext : DbContext
             entity.Property(e => e.MemberId).HasColumnName("MemberID");
             entity.Property(e => e.RiskLevel)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.SubmissionDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -775,7 +776,7 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
-                .IsUnicode(false);
+                .IsUnicode(true);
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -789,32 +790,32 @@ public partial class DataContext : DbContext
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.AgeGroup)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Dob).HasColumnName("DOB");
             entity.Property(e => e.Email)
                 .HasMaxLength(100)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.EmailVerified).HasDefaultValue(false);
             entity.Property(e => e.EmailVerificationExpiry).HasColumnType("datetime");
             entity.Property(e => e.EmailVerificationToken)
                 .HasMaxLength(100)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Password)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Phone)
                 .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.ProfileData).IsUnicode(false);
+                .IsUnicode(true);
+            entity.Property(e => e.ProfileData).IsUnicode(true);
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.LockoutEnd).HasColumnType("datetime");
             entity.Property(e => e.NoShowTotal).HasDefaultValue(0);
 
@@ -841,7 +842,7 @@ public partial class DataContext : DbContext
                 .HasDefaultValue("Open");
             entity.Property(e => e.Subject)
                 .HasMaxLength(200)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.CreatedBy).WithMany(p => p.UserInquiries)
                 .HasForeignKey(d => d.CreatedById)
@@ -873,7 +874,7 @@ public partial class DataContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.RoleInSurvey)
                 .HasMaxLength(20)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.SubmissionId).HasColumnName("SubmissionID");
             entity.Property(e => e.SurveyId).HasColumnName("SurveyID");
             entity.Property(e => e.UserId).HasColumnName("UserID");

@@ -91,11 +91,44 @@ namespace DrugPreventionAPI.Repositories
         }
         public async Task DeleteAsync(int id)
         {
-            var comment = await _ctx.Comments.FindAsync(id)
-                ?? throw new KeyNotFoundException($"Comment with ID {id} not found.");
+            using var transaction = await _ctx.Database.BeginTransactionAsync();
+            try
+            {
+                var comment = await _ctx.Comments
+                    .Include(c => c.Replies) // Đảm bảo tải tất cả các replies
+                    .FirstOrDefaultAsync(c => c.Id == id)
+                    ?? throw new KeyNotFoundException($"Comment with ID {id} not found.");
 
-            _ctx.Comments.Remove(comment);
-            await _ctx.SaveChangesAsync();
+                await DeleteRepliesRecursiveAsync(comment);
+
+                _ctx.Comments.Remove(comment);
+                await _ctx.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        private async Task DeleteRepliesRecursiveAsync(Comment comment)
+        {
+            if (comment.Replies == null || !comment.Replies.Any()) return;
+
+            // Lấy tất cả các comment con trực tiếp và tải đệ quy
+            var replies = await _ctx.Comments
+                .Where(c => c.ParentCommentId == comment.Id)
+                .Include(c => c.Replies) // Đệ quy tải các comment con
+                .ToListAsync();
+
+            foreach (var reply in replies)
+            {
+                await DeleteRepliesRecursiveAsync(reply); // Xóa đệ quy các comment con
+                _ctx.Comments.Remove(reply); // Xóa comment con sau khi xử lý
+            }
+
+            await _ctx.SaveChangesAsync(); // Lưu thay đổi sau mỗi cấp
         }
 
         public async Task<Comment?> GetByIdAsync(int id)

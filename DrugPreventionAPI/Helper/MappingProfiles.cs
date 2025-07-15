@@ -188,6 +188,17 @@ namespace DrugPreventionAPI.Helper
             CreateMap<ActivityParticipation, ActivityParticipationDTO>();
             CreateMap<ActivityParticipationDTO, ActivityParticipation>();
 
+
+            CreateMap<Certificate, CertificateDTO>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.MemberId))
+            .ForMember(dest => dest.CourseId, opt => opt.MapFrom(src => src.CourseId))
+            .ForMember(dest => dest.IssuedDate, opt => opt.MapFrom(src => src.IssuedDate))
+            .ForMember(dest => dest.CertificateNo, opt => opt.MapFrom(src => src.CertificateNo))
+            .ForMember(dest => dest.FileUrl, opt => opt.MapFrom(src => src.FileUrl));
+
+            // Nếu cần ánh xạ ngược (tùy chọn)
+            CreateMap<CertificateDTO, Certificate>();
         }
     }
 }

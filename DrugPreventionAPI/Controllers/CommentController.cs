@@ -90,7 +90,7 @@ namespace DrugPreventionAPI.Controllers
         }
 
         [HttpGet("{parentCommentId}/replies")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetReplies(int parentCommentId)
         {
             var replies = await _repo.GetRepliesAsync(parentCommentId);

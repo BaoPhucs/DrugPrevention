@@ -45,13 +45,24 @@ namespace DrugPreventionAPI.Controllers
         [Authorize(Roles = "Member")]
         public async Task<ActionResult<ActivityParticipationDTO>> Register([FromBody] int activityId)
         {
-            var memberId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");// from claims
+            var memberId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0"); // from claims
 
-            var exists = await _repo.GetByMemberAndActivityAsync(memberId, activityId); 
-                if (exists != null)
-                    return BadRequest("Already registered.");
+            var existing = await _repo.GetByMemberAndActivityAsync(memberId, activityId);
+            if (existing != null)
+            {
+                // Kiểm tra trạng thái, nếu là Canceled thì cập nhật lại
+                if (existing.Status == "Cancelled") // Lưu ý: "Cancelled" thay vì "Canceled" để khớp với repository
+                {
+                    var updated = await _repo.UpdateStatusAsync(existing.Id, "Registered");
+                    if (updated == null) return StatusCode(500, "Failed to update registration status.");
+                    return Ok(_mapper.Map<ActivityParticipationDTO>(updated));
+                }
+                // Nếu trạng thái khác Canceled (e.g., Registered), từ chối
+                return BadRequest("Already registered for this activity.");
+            }
 
-            var participation = new ActivityParticipation
+            // Trường hợp không có bản ghi, tạo mới
+            var newParticipation = new ActivityParticipation
             {
                 ActivityId = activityId,
                 MemberId = memberId,
@@ -59,8 +70,8 @@ namespace DrugPreventionAPI.Controllers
                 Status = "Registered"
             };
 
-            var created = await _repo.RegisterAsync(participation);
-            return Ok(_mapper.Map<ActivityParticipationDTO>(created));
+            var createdParticipation = await _repo.RegisterAsync(newParticipation);
+            return Ok(_mapper.Map<ActivityParticipationDTO>(createdParticipation));
         }
 
         [HttpDelete("delete/{id}")]

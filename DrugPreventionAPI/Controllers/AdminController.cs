@@ -125,7 +125,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         [HttpPost("force-reset-password/{userId}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> ForceResetPassword(int userId, [FromBody] ForceResetPasswordDTO dto)
         {
             if (string.IsNullOrWhiteSpace(dto.NewPassword))
@@ -136,6 +136,46 @@ namespace DrugPreventionAPI.Controllers
                 return NotFound($"User with ID {userId} not found or reset failed");
 
             return Ok("Password has been reset successfully");
+        }
+
+        [HttpGet("user-count")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> GetUserCount()
+        {
+            var count = await _adminRepository.GetUserCountAsync();
+            return Ok(new { UserCount = count });
+        }
+
+        [HttpGet("course-enrollment-count")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> GetCourseEnrollmentCount()
+        {
+            var count = await _adminRepository.CountCourseEnrollment();
+            return Ok(new { CourseEnrollmentCount = count });
+        }
+
+        [HttpGet("course-enrollment-count/{courseId}")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> GetCourseEnrollmentCountByCourseId(int courseId)
+        {
+            var count = await _adminRepository.CountCourseEnrollmentByCourseId(courseId);
+            return Ok(new { CourseEnrollmentCount = count });
+        }
+
+        [HttpGet("survey-submission-count/{surveyId}")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> GetSurveySubmissionCount(int surveyId)
+        {
+            var count = await _adminRepository.CountSurveySubmission(surveyId);
+            return Ok(new { SurveySubmissionCount = count });
+        }
+
+        [HttpGet("passed-course-count")]
+        [Authorize(Roles = "Admin, Manager")]
+        public async Task<IActionResult> GetPassedCourseCount()
+        {
+            var count = await _adminRepository.CountPassedCourse();
+            return Ok(new { PassedCourseCount = count });
         }
     }
 }

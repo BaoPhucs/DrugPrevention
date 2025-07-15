@@ -66,5 +66,40 @@ namespace DrugPreventionAPI.Controllers
             return NoContent();
         }
 
+        [HttpPost("submit-for-approval/{id}")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> SubmitForApproval(int id)
+        {
+            var post = await _repo.SubmitForApprovalAsync(id);
+            if (post == null) return BadRequest("Cannot submit for approval. Blog post may not be in Pending status.");
+            return Ok(_mapper.Map<BlogPostDTO>(post));
+        }
+
+        [HttpPost("approve/{id}")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Approve(int id)
+        {
+            var post = await _repo.ApproveAsync(id);
+            if (post == null) return BadRequest("Cannot approve. Blog post may not be in Submitted status.");
+            return Ok(_mapper.Map<BlogPostDTO>(post));
+        }
+
+        [HttpPost("reject/{id}")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Reject(int id, [FromQuery] string? reviewComments)
+        {
+            var post = await _repo.RejectAsync(id, reviewComments);
+            if (post == null) return BadRequest("Cannot reject. Blog post may not be in Submitted status.");
+            return Ok(_mapper.Map<BlogPostDTO>(post));
+        }
+
+        [HttpPost("publish/{id}")]
+        [Authorize(Roles = "Manager")]
+        public async Task<IActionResult> Publish(int id)
+        {
+            var post = await _repo.PublishAsync(id);
+            if (post == null) return BadRequest("Cannot publish. Blog post may not be in Approved status.");
+            return Ok(_mapper.Map<BlogPostDTO>(post));
+        }
     }
 }
