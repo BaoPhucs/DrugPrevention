@@ -36,7 +36,7 @@ namespace DrugPreventionAPI.Controllers
 
 
         [HttpPost("create-inquiry")]
-        [AllowAnonymous]
+        [Authorize]
         public async Task<IActionResult> Create(CreateUserInquiryDTO dto)
         {
             var iq = _mapper.Map<UserInquiry>(dto);

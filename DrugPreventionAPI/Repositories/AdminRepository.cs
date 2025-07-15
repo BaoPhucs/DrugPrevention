@@ -15,7 +15,7 @@ namespace DrugPreventionAPI.Repositories
             _context = context;
             _configuration = configuration;
         }
-        
+
         public async Task<bool> DeleteAsync(int userId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -119,6 +119,34 @@ namespace DrugPreventionAPI.Repositories
             user.Password = newPassword;  // hãy hash mật khẩu
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<int> CountUser()
+        {
+            return await _context.Users.CountAsync(); // Returns the total number of users in the system
+        }
+
+        public async Task<int> CountCourseEnrollment()
+        {
+            return await _context.CourseEnrollments.CountAsync(); // Returns the total number of course enrollments
+        }
+
+        public async Task<int> CountCourseEnrollmentByCourseId(int courseId)
+        {
+            return await _context.CourseEnrollments
+                .CountAsync(ce => ce.CourseId == courseId); // Returns the number of enrollments for a specific course
+        }
+
+        public async Task<int> CountSurveySubmission(int surveyId)
+        {
+            return await _context.SurveySubmissions
+                .CountAsync(ss => ss.SurveyId == surveyId); // Returns the number of survey submissions for a specific survey
+        }
+
+        public async Task<int> CountPassedCourse()
+        {
+            return await _context.CourseEnrollments
+                .CountAsync(ce => ce.Status == "Completed"); // Returns the number of course enrollments with a specific status
         }
     }
 }

@@ -61,14 +61,14 @@ namespace DrugPreventionAPI.Controllers
 
         [HttpPut("update-note/{noteId}")]
         [Authorize(Roles = "Consultant")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateConsultationNoteDTO dto)
+        public async Task<IActionResult> Update(int noteId, [FromBody] UpdateConsultationNoteDTO dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Notes))
                 return BadRequest("Notes cannot be empty.");
 
-            var ok = await _consultationNoteRepository.UpdateNoteAssync(id, dto.Notes);
+            var ok = await _consultationNoteRepository.UpdateNoteAssync(noteId, dto.Notes);
             if (!ok)
-                return NotFound($"ConsultationNote with ID {id} not found.");
+                return NotFound($"ConsultationNote with ID {noteId} not found.");
 
             return NoContent();
         }

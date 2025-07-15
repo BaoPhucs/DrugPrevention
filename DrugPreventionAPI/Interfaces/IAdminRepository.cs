@@ -15,5 +15,11 @@ namespace DrugPreventionAPI.Interfaces
 
         Task<bool> UpdateUserByAdminAsync(User user);
         Task<bool> ForceResetPasswordAsync(int userId, string newPassword);
+
+        Task<int> CountUser();
+        Task<int> CountCourseEnrollment();
+        Task<int> CountCourseEnrollmentByCourseId(int courseId);
+        Task<int> CountSurveySubmission(int surveyId);
+        Task<int> CountPassedCourse();
     }
 }

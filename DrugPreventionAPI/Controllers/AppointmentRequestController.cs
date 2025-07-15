@@ -103,16 +103,17 @@ namespace DrugPreventionAPI.Controllers
         }
 
         // 10) Member huỷ request (xóa hẳn) trước khi consultant confirm
-        [HttpDelete("{requestId:int}")]
+        [HttpPatch("{requestId:int}")]
         [Authorize(Roles = "Member")]
-        public async Task<IActionResult> Cancel(int requestId)
+        public async Task<IActionResult> Cancel(int requestId, [FromBody] NoShowDTO? cancellation = null)
         {
             // chỉ cho phép chính chủ huỷ
             var req = await _appointmentRequestRepository.GetByIdAsync(requestId);
             if (req == null) return NotFound($"Request {requestId} không tồn tại.");
             if (req.MemberId != CurrentUserId) return Forbid();
 
-            var success = await _appointmentRequestRepository.DeleteAsync(requestId);
+            var reason = cancellation?.Reason; // Lấy reason từ DTO
+            var success = await _appointmentRequestRepository.CancelAsync(requestId, reason);
             if (!success) return StatusCode(500, "Không thể huỷ request này.");
             return NoContent(); // 204
         }

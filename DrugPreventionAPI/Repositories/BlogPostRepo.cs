@@ -14,7 +14,7 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<BlogPost> AddAsync(BlogPost post, IEnumerable<int> tagIds)
         {
-            // attach post
+            post.Status = "Pending";
             post.BlogTags = tagIds
                 .Select(tid => new BlogTag { BlogPostId = post.Id, TagId = tid })
                 .ToList();
@@ -125,7 +125,7 @@ namespace DrugPreventionAPI.Repositories
         public async Task<BlogPost?> SubmitForApprovalAsync(int id)
         {
             var post = await _ctx.BlogPosts.FindAsync(id);
-            if (post == null || post.Status != "Pending") return null;
+            if (post.Status != "Pending" && post.Status != "Rejected") return null;
 
             post.Status = "Submitted";
             await _ctx.SaveChangesAsync();

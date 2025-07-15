@@ -27,10 +27,10 @@ namespace DrugPreventionAPI.Repositories
                          .ToListAsync();
         }
 
-        public async Task<IEnumerable<SurveySubmission>> GetByUserAsync(int memberId)
+        public async Task<IEnumerable<SurveySubmission>> GetByUserAsync(int surveyId, int memberId)
         {
             return await _context.SurveySubmissions
-                             .Where(s => s.MemberId == memberId)
+                             .Where(s => s.MemberId == memberId && s.SurveyId == surveyId)
                              .OrderByDescending(s => s.SubmissionDate)
                              .ToListAsync();
         }

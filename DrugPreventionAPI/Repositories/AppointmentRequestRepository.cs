@@ -31,15 +31,17 @@ namespace DrugPreventionAPI.Repositories
             return req;
         }
 
-        public async Task<bool> DeleteAsync(int requestId)
+        public async Task<bool> CancelAsync(int requestId, string? reason = null)
         {
             var req = await _context.AppointmentRequests
                                 .FirstOrDefaultAsync(r => r.Id == requestId);
             if (req == null)
                 return false;
 
-            // Xóa request
-            _context.AppointmentRequests.Remove(req);
+            // Cập nhật lý do hủy trước khi xóa
+            req.Status = "Cancelled";
+            req.CancelReason = reason;
+            req.CancelledDate = DateTime.UtcNow; // Cập nhật thời gian hủy (nếu cần)
 
             // Mở lại khung giờ này cho consultant
             var slot = await _context.ConsultantSchedules

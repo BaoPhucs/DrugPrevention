@@ -48,18 +48,18 @@ namespace DrugPreventionAPI.Controllers
 
         [HttpGet("users/{memberId:int}/submissions")]
         [Authorize]
-        public async Task<IActionResult> GetByUser(int memberId)
+        public async Task<IActionResult> GetByUser(int surveyId, int memberId)
         {
             var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (idClaim == null ||
                 (int.Parse(idClaim) != memberId &&
                  !User.IsInRole("Manager") &&
-                 !User.IsInRole("Consultant")))
+                 !User.IsInRole("Consultant"))) 
             {
                 return Forbid();
             }
 
-            var submissions = await _surveySubmissionRepository.GetByUserAsync(memberId);
+            var submissions = await _surveySubmissionRepository.GetByUserAsync(surveyId, memberId);
             if (submissions == null || !submissions.Any())
                 return NotFound("No submissions found for this user.");
 

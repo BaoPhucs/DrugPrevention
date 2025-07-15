@@ -13,7 +13,7 @@ namespace DrugPreventionAPI.Interfaces
 
         // Lấy lịch sử submission
         Task<IEnumerable<SurveySubmission>> GetBySurveyAsync(int surveyId);
-        Task<IEnumerable<SurveySubmission>> GetByUserAsync(int memberId);
+        Task<IEnumerable<SurveySubmission>> GetByUserAsync(int surveyId, int memberId);
         Task<SurveySubmission?> GetByIdAsync(int submissionId);
     }
 }

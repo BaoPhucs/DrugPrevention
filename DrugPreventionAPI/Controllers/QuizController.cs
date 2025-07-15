@@ -21,7 +21,7 @@ namespace DrugPreventionAPI.Controllers
 
         [HttpGet("get-quiz")]
         [Authorize]
-        public async Task<IActionResult> GetQuizQuestions(int courseId, [FromQuery] int count = 15)
+        public async Task<IActionResult> GetQuizQuestions(int courseId, [FromQuery] int count = 10)
         {
             if (count <= 0) return BadRequest("Count must be greater than 0");
             var questions = await _quizRepository.GetQuizQuestionsAsync(courseId, count);

@@ -7,7 +7,7 @@ namespace DrugPreventionAPI.Interfaces
         Task<IEnumerable<CommunicationActivity>> GetAllAsync();
         Task<CommunicationActivity?> GetByIdAsync(int id);
         Task<CommunicationActivity> CreateAsync(CommunicationActivity activity);
-        Task<CommunicationActivity?> UpdateAsync(int id, CommunicationActivity updated);
+        Task<CommunicationActivity?> UpdateAsync(int id, CommunicationActivity updated, int userId);
         Task<bool> DeleteAsync(int id);
         Task<CommunicationActivity?> SubmitForApprovalAsync(int id); // Gửi phê duyệt
         Task<CommunicationActivity?> ApproveAsync(int id); // Phê duyệt

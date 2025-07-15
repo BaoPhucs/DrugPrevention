@@ -29,6 +29,11 @@ namespace DrugPreventionAPI.Controllers
 
         [HttpGet("Get-All-Activities")]
         [AllowAnonymous]
+        //public async Task<ActionResult<IEnumerable<CommunicationActivityDTO>>> GetAll()
+        //{
+        //    var activities = await _repo.GetAllAsync();
+        //    return Ok(_mapper.Map<IEnumerable<CommunicationActivityDTO>>(activities));
+        //}
         public async Task<ActionResult<IEnumerable<CommunicationActivityDTO>>> GetAll()
         {
             var activities = await _context.CommunicationActivities.ToListAsync();
@@ -39,9 +44,9 @@ namespace DrugPreventionAPI.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<CommunicationActivityDTO>> Get(int id)
         {
-            var activity = await _context.CommunicationActivities.FindAsync(id);
+            var activity = await _repo.GetByIdAsync(id);
             if (activity == null) return NotFound();
-            return Ok(activity);
+            return Ok(_mapper.Map<CommunicationActivityDTO>(activity));
         }
 
         [HttpPost("Create-Activity")]
@@ -58,17 +63,15 @@ namespace DrugPreventionAPI.Controllers
                 entity.CreatedById = userId;
             }
 
-            _context.CommunicationActivities.Add(entity);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(Get), new { id = entity.Id }, _mapper.Map<CommunicationActivityDTO>(entity));
+            var created = await _repo.CreateAsync(entity);
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, _mapper.Map<CommunicationActivityDTO>(created));
         }
 
         [HttpPut("Update-activity/{id}")]
         [Authorize(Roles = "Consultant, Staff, Manager")]
         public async Task<ActionResult<CommunicationActivityDTO>> Update(int id, CreateCommunicationActivityDTO dto)
         {
-            var existing = await _context.CommunicationActivities.FindAsync(id);
+            var existing = await _repo.GetByIdAsync(id);
             if (existing == null) return NotFound();
 
             // Lấy userId từ claim một cách an toàn
@@ -78,42 +81,67 @@ namespace DrugPreventionAPI.Controllers
                 return Forbid("User ID missing or invalid.");
             }
 
-            // Kiểm tra quyền sở hữu
-            if (existing.CreatedById.HasValue && existing.CreatedById != userId)
+            var updated = _mapper.Map<CommunicationActivity>(dto);
+            updated.Id = id; // Đảm bảo giữ nguyên Id
+            var result = await _repo.UpdateAsync(id, updated, userId);
+
+            if (result == null)
             {
                 return Forbid("You do not have permission to update this activity.");
             }
-
-            // Cập nhật thủ công các thuộc tính, chỉ khi giá trị hợp lệ và không phải mặc định
-            if (dto.Title != null && !string.IsNullOrWhiteSpace(dto.Title) && dto.Title != "string")
-            {
-                existing.Title = dto.Title;
-            }
-
-            if (dto.Description != null && !string.IsNullOrWhiteSpace(dto.Description) && dto.Description != "string")
-            {
-                existing.Description = dto.Description;
-            }
-
-            if (dto.EventDate != default && dto.EventDate > DateTime.UtcNow)
-            {
-                existing.EventDate = dto.EventDate;
-            }
-
-            if (dto.Location != null && !string.IsNullOrWhiteSpace(dto.Location) && dto.Location != "string")
-            {
-                existing.Location = dto.Location;
-            }
-
-            if (dto.Capacity.HasValue && dto.Capacity > 0) // Loại bỏ giá trị 0 mặc định
-            {
-                existing.Capacity = dto.Capacity;
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(_mapper.Map<CommunicationActivityDTO>(existing));
+            return Ok(_mapper.Map<CommunicationActivityDTO>(result));
         }
+
+        //[HttpPut("Update-activity/{id}")]
+        //[Authorize(Roles = "Consultant, Staff, Manager")]
+        //public async Task<ActionResult<CommunicationActivityDTO>> Update(int id, CreateCommunicationActivityDTO dto)
+        //{
+        //    var existing = await _context.CommunicationActivities.FindAsync(id);
+        //    if (existing == null) return NotFound();
+
+        //    // Lấy userId từ claim một cách an toàn
+        //    var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(claim) || !int.TryParse(claim, out var userId))
+        //    {
+        //        return Forbid("User ID missing or invalid.");
+        //    }
+
+        //    // Kiểm tra quyền sở hữu
+        //    if (existing.CreatedById.HasValue && existing.CreatedById != userId)
+        //    {
+        //        return Forbid("You do not have permission to update this activity.");
+        //    }
+
+        //    // Cập nhật thủ công các thuộc tính, chỉ khi giá trị hợp lệ và không phải mặc định
+        //    if (dto.Title != null && !string.IsNullOrWhiteSpace(dto.Title) && dto.Title != "string")
+        //    {
+        //        existing.Title = dto.Title;
+        //    }
+
+        //    if (dto.Description != null && !string.IsNullOrWhiteSpace(dto.Description) && dto.Description != "string")
+        //    {
+        //        existing.Description = dto.Description;
+        //    }
+
+        //    if (dto.EventDate != default && dto.EventDate > DateTime.UtcNow)
+        //    {
+        //        existing.EventDate = dto.EventDate;
+        //    }
+
+        //    if (dto.Location != null && !string.IsNullOrWhiteSpace(dto.Location) && dto.Location != "string")
+        //    {
+        //        existing.Location = dto.Location;
+        //    }
+
+        //    if (dto.Capacity.HasValue && dto.Capacity > 0) // Loại bỏ giá trị 0 mặc định
+        //    {
+        //        existing.Capacity = dto.Capacity;
+        //    }
+
+        //    await _context.SaveChangesAsync();
+
+        //    return Ok(_mapper.Map<CommunicationActivityDTO>(existing));
+        //}
 
         [HttpDelete("Delete-Activity/{id}")]
         [Authorize(Roles = "Manager, Staff")]
