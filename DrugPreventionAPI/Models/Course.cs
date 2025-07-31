@@ -51,5 +51,5 @@ public partial class Course
 
     public ICollection<QuizSubmission> QuizSubmissions { get; set; } 
 
-    public ICollection<QuestionBank> Questions { get; set; } 
+    //public ICollection<QuestionBank> Questions { get; set; } 
 }

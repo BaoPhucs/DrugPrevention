@@ -20,15 +20,39 @@ namespace DrugPreventionAPI.Repositories
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
         }
 
-        public async Task<bool> DeleteCourseAsync(int id)
+        //public async Task<bool> DeleteCourseAsync(int id)
+        //{
+        //    var course = await _context.Courses.FindAsync(id);
+        //    if (course == null)
+        //    {
+        //        return false; // Course not found
+        //    }
+        //    _context.Courses.Remove(course);
+        //    return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
+        //}
+        public async Task<(bool Success, string? Message)> DeleteCourseAsync(int id)
         {
-            var course = await _context.Courses.FindAsync(id);
+            var course = await _context.Courses
+                .Include(c => c.CourseEnrollments)
+                .Include(c => c.Certificates)
+                .Include(c => c.CourseMaterials)
+                .Include(c => c.CourseQuestions)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
             if (course == null)
             {
-                return false; // Course not found
+                return (false, $"Course with ID {id} not found");
             }
+
+            // Xóa các bản ghi liên quan trước
+            _context.CourseEnrollments.RemoveRange(course.CourseEnrollments);
+            _context.Certificates.RemoveRange(course.Certificates);
+            _context.CourseMaterials.RemoveRange(course.CourseMaterials);
+            _context.CourseQuestions.RemoveRange(course.CourseQuestions);
+
             _context.Courses.Remove(course);
-            return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
+            var rowsAffected = await _context.SaveChangesAsync();
+            return (rowsAffected > 0, null);
         }
 
         public async Task<IEnumerable<Course>> GetAllCoursesAsync()

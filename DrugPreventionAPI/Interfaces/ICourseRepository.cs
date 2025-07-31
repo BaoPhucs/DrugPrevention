@@ -15,7 +15,7 @@ namespace DrugPreventionAPI.Interfaces
         //CRUD
         Task<bool> CreateCourseAsync(Course course); // Adds a new course
         Task<bool> UpdateCourseAsync(Course course); // Updates an existing course
-        Task<bool> DeleteCourseAsync(int id); // Deletes a course by its ID
+        Task<(bool Success, string? Message)> DeleteCourseAsync(int id); // Deletes a course by its ID
 
         //Content‐workflow
         Task<bool> ApproveAsync(int courseId);                   // Manager duyệt
