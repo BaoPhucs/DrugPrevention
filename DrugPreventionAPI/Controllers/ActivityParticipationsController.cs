@@ -41,6 +41,15 @@ namespace DrugPreventionAPI.Controllers
             return Ok(_mapper.Map<List<ActivityParticipationDTO>>(participations));
         }
 
+        [HttpGet("get-by-member/{memberId}")]
+        [Authorize(Roles = "Member, Admin, Manager, Staff")]
+        public async Task<ActionResult<ActivityParticipationDTO>> GetByMember(int memberId)
+        {
+            var participation = await _repo.GetByUserIdAsync(memberId);
+            if (participation == null) return NotFound();
+            return Ok(_mapper.Map<List<ActivityParticipationDTO>>(participation));
+        }
+
         [HttpPost("register-activity")]
         [Authorize(Roles = "Member")]
         public async Task<ActionResult<ActivityParticipationDTO>> Register([FromBody] int activityId)

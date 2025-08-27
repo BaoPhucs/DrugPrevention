@@ -75,7 +75,9 @@ namespace DrugPreventionAPI.Repositories
             return participation;
         }
 
-        
-
+        public async Task<IEnumerable<ActivityParticipation>> GetByUserIdAsync(int userId)
+        {
+            return await _context.ActivityParticipations.Where(p => p.MemberId == userId).ToListAsync();
+        }
     }
 }

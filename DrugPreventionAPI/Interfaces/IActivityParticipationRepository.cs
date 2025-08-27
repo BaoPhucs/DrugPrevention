@@ -6,6 +6,7 @@ namespace DrugPreventionAPI.Interfaces
     {
         Task<IEnumerable<ActivityParticipation>> GetByActivityIdAsync(int activityId);
         Task<ActivityParticipation?> GetByMemberAndActivityAsync(int memberId, int activityId);
+        Task<IEnumerable<ActivityParticipation>> GetByUserIdAsync(int userId);
         Task<ActivityParticipation> RegisterAsync(ActivityParticipation participation);
         Task<bool> DeleteAsync(int id);
         Task<ActivityParticipation?> UpdateStatusAsync(int id, string status);

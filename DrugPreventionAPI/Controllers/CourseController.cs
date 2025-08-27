@@ -133,12 +133,16 @@ namespace DrugPreventionAPI.Controllers
         [Authorize(Roles = "Manager")]
         public async Task<IActionResult> DeleteCourse(int id)
         {
-            var result = await _courseRepository.DeleteCourseAsync(id);
-            if (!result)
+            var (success, message) = await _courseRepository.DeleteCourseAsync(id);
+            if (!success)
             {
+                if (message != null)
+                {
+                    return Conflict(message); // 409 Conflict nếu có ràng buộc
+                }
                 return NotFound($"Course with ID {id} not found");
             }
-            return NoContent(); // Trả về 204 No Content nếu xóa thành công
+            return NoContent(); // 204 No Content nếu xóa thành công
         }
 
         [HttpPut("update-course/{courseId}")]

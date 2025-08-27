@@ -21,5 +21,5 @@ public partial class QuestionBank
 
     public ICollection<QuizSubmissionAnswer> QuizSubmissionAnswers { get; set; } 
 
-    public ICollection<Course> Courses { get; set; } 
+    //public ICollection<Course> Courses { get; set; } 
 }
