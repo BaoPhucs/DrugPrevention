@@ -110,7 +110,7 @@ namespace DrugPreventionAPI.Repositories
 
             // Cập nhật ngày cập nhật nếu có thay đổi
             post.UpdatedDate = DateTime.UtcNow;
-
+            post.Status = "Pending"; // Đặt lại trạng thái về Pending khi cập nhật
             await _ctx.SaveChangesAsync();
 
             // Tải lại dữ liệu đầy đủ để trả về

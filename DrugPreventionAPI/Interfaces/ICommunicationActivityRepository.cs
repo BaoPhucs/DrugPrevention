@@ -13,5 +13,6 @@ namespace DrugPreventionAPI.Interfaces
         Task<CommunicationActivity?> ApproveAsync(int id); // Phê duyệt
         Task<CommunicationActivity?> RejectAsync(int id, string? reviewComments); // Từ chối
         Task<CommunicationActivity?> PublishAsync(int id); // Đăng bài
+        Task<(int CancelledCount, Dictionary<int, (string Title, string[] Emails)> Details)> CheckAndCancelAllUnderCapacityAsync();
     }
 }

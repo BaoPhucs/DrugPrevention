@@ -72,7 +72,7 @@ public partial class DataContext : DbContext
 
     public virtual DbSet<UserSurvey> UserSurveys { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder) //Phương thức OnModelCreating được ghi đè để cấu hình chi tiết các thực thể (entities) và mối quan hệ giữa chúng. Đây là nơi định nghĩa khóa chính, khóa ngoại, các ràng buộc, giá trị mặc định, và các quy tắc khác.
     {
         modelBuilder.Entity<ActivityParticipation>(entity =>
         {
@@ -240,6 +240,7 @@ public partial class DataContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Description).IsUnicode(true);
             entity.Property(e => e.EventDate).HasColumnType("datetime");
+            entity.Property(e => e.RegistrationDeadline).HasColumnType("datetime");
             entity.Property(e => e.Location)
                 .HasMaxLength(200)
                 .IsUnicode(true);
