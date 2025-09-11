@@ -174,7 +174,8 @@ namespace DrugPreventionAPI.Helper
                 .ForMember(dest => dest.Description, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Description)))
                 .ForMember(dest => dest.EventDate, opt => opt.Condition(src => src.EventDate != default))
                 .ForMember(dest => dest.Location, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Location)))
-                .ForMember(dest => dest.Capacity, opt => opt.Condition(src => src.Capacity.HasValue && src.Capacity > 0));
+                .ForMember(dest => dest.Capacity, opt => opt.Condition(src => src.Capacity.HasValue && src.Capacity > 0))
+                .ForMember(dest => dest.RegistrationDeadline, opt => opt.Condition(src => src.RegistrationDeadline != default));
 
             //
             CreateMap<ConsultantSchedule, ConsultantScheduleDTO>();

@@ -120,7 +120,8 @@ namespace DrugPreventionAPI.Repositories
             existingCourse.Level = course.Level;
             existingCourse.Duration = course.Duration;
             existingCourse.PassingScore = course.PassingScore;
-            existingCourse.Status = course.Status;
+            existingCourse.Status = "Pending";
+            existingCourse.WorkflowState = "Draft";
 
             return await _context.SaveChangesAsync() > 0; // Returns true if at least one row was affected
 

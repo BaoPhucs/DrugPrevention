@@ -59,7 +59,7 @@ namespace DrugPreventionAPI.Repositories
         public async Task<IEnumerable<AppointmentRequest>> GetAllAsync()
         {
             return await _context.AppointmentRequests
-                             .AsNoTracking()
+                             .AsNoTracking() //AsNoTracking trong Entity Framework Core được dùng để chỉ định rằng các thực thể (entities) truy vấn được sẽ không được theo dõi (tracked) bởi DbContext.
                              .ToListAsync();
         }
 

@@ -8,10 +8,11 @@ namespace DrugPreventionAPI.Repositories
     public class CommunicationActivityRepository : ICommunicationActivityRepository
     {
         private readonly DataContext _context;
-
-        public CommunicationActivityRepository(DataContext context)
+        private readonly ILogger<CommunicationActivityRepository> _logger;
+        public CommunicationActivityRepository(DataContext context, ILogger<CommunicationActivityRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<CommunicationActivity>> GetAllAsync()
@@ -76,7 +77,7 @@ namespace DrugPreventionAPI.Repositories
 
             // Cập nhật ngày cập nhật nếu có thay đổi
             existing.CreatedDate = existing.CreatedDate; // Giữ nguyên CreatedDate
-            existing.Status = existing.Status; // Đảm bảo Status không bị ghi đè không mong muốn
+            existing.Status = "Pending"; // Đảm bảo Status không bị ghi đè không mong muốn
 
             await _context.SaveChangesAsync();
             return existing;
@@ -129,12 +130,40 @@ namespace DrugPreventionAPI.Repositories
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var entity = await _context.CommunicationActivities.FindAsync(id);
-            if (entity == null) return false;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = await _context.CommunicationActivities
+                    .Include(a => a.ActivityParticipations)
+                    .Include(a => a.Comments)
+                    .FirstOrDefaultAsync(a => a.Id == id);
 
-            _context.CommunicationActivities.Remove(entity);
-            await _context.SaveChangesAsync();
-            return true;
+                if (entity == null) return false;
+
+                // Xóa tất cả ActivityParticipations liên quan
+                if (entity.ActivityParticipations?.Any() == true)
+                {
+                    _context.ActivityParticipations.RemoveRange(entity.ActivityParticipations);
+                }
+
+                // Xóa tất cả Comments liên quan
+                if (entity.Comments?.Any() == true)
+                {
+                    _context.Comments.RemoveRange(entity.Comments);
+                }
+
+                // Xóa CommunicationActivity
+                _context.CommunicationActivities.Remove(entity);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                return false; // Trả về false nếu có lỗi
+            }
         }
 
         public async Task<CommunicationActivity?> SubmitForApprovalAsync(int id)
@@ -177,5 +206,107 @@ namespace DrugPreventionAPI.Repositories
             await _context.SaveChangesAsync();
             return activity;
         }
+
+        //public async Task<(int CancelledCount, Dictionary<int, (string Title, string[] Emails)> Details)> CheckAndCancelAllUnderCapacityAsync()
+        //{
+        //    var activities = await _context.CommunicationActivities
+        //        .Include(a => a.ActivityParticipations)
+        //        .ToListAsync();
+
+        //    var cancelledCount = 0;
+        //    var details = new Dictionary<int, (string Title, string[] Emails)>();
+
+        //    foreach (var activity in activities)
+        //    {
+        //        if (activity.Status == "Published" &&
+        //            activity.RegistrationDeadline.HasValue && DateTime.UtcNow > activity.RegistrationDeadline)
+        //        {
+        //            int registeredCount = activity.ActivityParticipations.Count(p => p.Status == "Registered");
+        //            if (activity.Capacity.HasValue && registeredCount < (activity.Capacity.Value * 0.6))
+        //            {
+        //                activity.Status = "Cancelled";
+        //                cancelledCount++;
+
+        //                var participantEmails = await _context.ActivityParticipations
+        //                    .Where(p => p.ActivityId == activity.Id && p.Status == "Registered")
+        //                    .Include(p => p.Member)
+        //                    .Select(p => p.Member.Email)
+        //                    .ToListAsync();
+
+        //                details[activity.Id] = (activity.Title ?? "Unknown Event", participantEmails?.ToArray() ?? Array.Empty<string>());
+        //            }
+        //        }
+        //    }
+
+        //    if (cancelledCount > 0)
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+
+        //    return (cancelledCount, details);
+        //}
+        public async Task<(int CancelledCount, Dictionary<int, (string Title, string[] Emails)> Details)> CheckAndCancelAllUnderCapacityAsync()
+        {
+            var activities = await _context.CommunicationActivities
+                .Include(a => a.ActivityParticipations)
+                .ToListAsync();
+
+            var cancelledCount = 0;
+            var details = new Dictionary<int, (string Title, string[] Emails)>();
+
+            foreach (var activity in activities)
+            {
+                _logger.LogInformation($"Checking activity {activity.Id}: Status={activity.Status}, Deadline={activity.RegistrationDeadline}, Capacity={activity.Capacity}, Registered={activity.ActivityParticipations.Count(p => p.Status == "Registered")}");
+
+                if (activity.Status == "Published" &&
+                    activity.RegistrationDeadline.HasValue && DateTime.UtcNow > activity.RegistrationDeadline.Value.ToUniversalTime())
+                {
+                    int registeredCount = activity.ActivityParticipations.Count(p => p.Status == "Registered");
+                    _logger.LogInformation($"Activity {activity.Id} - RegisteredCount={registeredCount}, Threshold={(activity.Capacity.HasValue ? activity.Capacity.Value * 0.6 : 0)}");
+
+                    if (activity.Capacity.HasValue && registeredCount < (activity.Capacity.Value * 0.6))
+                    {
+                        activity.Status = "Cancelled";
+                        cancelledCount++;
+
+                        var participantEmails = await _context.ActivityParticipations
+                            .Where(p => p.ActivityId == activity.Id && p.Status == "Registered")
+                            .Include(p => p.Member)
+                            .Select(p => p.Member.Email)
+                            .Where(e => !string.IsNullOrEmpty(e)) // Loại bỏ email null
+                            .ToListAsync();
+
+                        details[activity.Id] = (activity.Title ?? "Unknown Event", participantEmails?.ToArray() ?? Array.Empty<string>());
+                        _logger.LogInformation($"Activity {activity.Id} marked for cancellation. Emails: {string.Join(",", participantEmails ?? new List<string>())}");
+                    }
+                }
+            }
+
+            if (cancelledCount > 0)
+            {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    _logger.LogInformation($"Successfully cancelled {cancelledCount} activities.");
+                }
+                catch (DbUpdateException ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, $"Database error when saving cancelled activities: {ex.InnerException?.Message}");
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, $"Unexpected error when saving cancelled activities.");
+                    throw;
+                }
+            }
+
+            return (cancelledCount, details);
+        }
+        
     }
 }

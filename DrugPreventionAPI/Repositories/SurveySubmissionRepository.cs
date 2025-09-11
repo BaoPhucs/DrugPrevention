@@ -85,7 +85,7 @@ namespace DrugPreventionAPI.Repositories
                 // ví dụ: >=2 => High, ==1 => Medium, 0 => Low
                 risk = totalScore == 0
                         ? "Low"
-                        : totalScore == 1
+                        : totalScore <= 2
                             ? "Medium"
                             : "High";
             }

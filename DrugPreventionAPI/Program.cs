@@ -1,19 +1,20 @@
 ﻿
 using DrugPreventionAPI.Data;
 using DrugPreventionAPI.Interfaces;
-using DrugPreventionAPI.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using DrugPreventionAPI.Models;
-using Microsoft.OpenApi.Models;
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using FirebaseAdmin;
-using Google.Apis.Auth.OAuth2;
-using FirebaseAdmin.Auth;
+using DrugPreventionAPI.Repositories;
 using DrugPreventionAPI.Services;
+using FirebaseAdmin;
+using FirebaseAdmin.Auth;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.ComponentModel;
+using System.Text;
 
 namespace DrugPreventionAPI
 {
@@ -21,7 +22,7 @@ namespace DrugPreventionAPI
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            var builder = WebApplication.CreateBuilder(args);   
 
             // 1. Đăng ký DbContext
             builder.Services.AddDbContext<DataContext>(options =>
@@ -31,7 +32,7 @@ namespace DrugPreventionAPI
             builder.Services.AddHttpClient();
             builder.Services.AddHttpContextAccessor();
             // 2. Đăng ký các Service/Repository
-            builder.Services.AddScoped<IInquiryAssignmentRepository, InquiryAssignmentRepository>();
+            builder.Services.AddScoped<IInquiryAssignmentRepository, InquiryAssignmentRepository>(); //AddScoped: Service sẽ được tạo một lần duy nhất cho mỗi HTTP request. Gọi từ IOC container.
             builder.Services.AddScoped<IInquiryCommentRepository, InquiryCommentRepository>();
             builder.Services.AddScoped<IUserInquiryRepository, UserInquiryRepository>();
             builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
@@ -55,6 +56,11 @@ namespace DrugPreventionAPI
             builder.Services.AddScoped<ICommentRepo, CommentRepo>();
             builder.Services.AddScoped<ITagRepo, TagRepo>();
 
+            builder.Services.AddLogging(logging =>
+            {
+                logging.AddConsole();
+                logging.AddDebug();
+            });
 
             builder.Services.AddScoped<ISurveySubstanceRepository, SurveySubstanceRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
@@ -62,10 +68,12 @@ namespace DrugPreventionAPI
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<IEmailService, EmailService>();
 
-            builder.Services.AddHostedService<ScheduledPublisher>();
-            builder.Services.AddHostedService<ScheduledTasksService>();
+            builder.Services.AddHostedService<ScheduledPublisher>(); //đăng ký dịch vụ nền (background service)
+            builder.Services.AddHostedService<ScheduledTasksService>(); //Các dịch vụ này chạy liên tục cùng ứng dụng, không bị ràng buộc vào HTTP request. Được đăng ký thông qua IOC Container. Không cần phải khởi tạo thủ công.
+            builder.Services.AddHostedService<CommunicationActivityCancellationService>();
             // AutoMapper
-            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies()); //Đăng ký AutoMapper để sử dụng mapping giữa các object (DTO ↔ Entity).
+                                            //giúp quét toàn bộ project để tìm các profile mapping.
 
             // 3. Cấu hình JWT Authentication
             var jwtSection = builder.Configuration.GetSection("Jwt");
@@ -96,11 +104,11 @@ namespace DrugPreventionAPI
             builder.Services.AddAuthorization();
 
             // 5. Controllers
-            builder.Services.AddControllers();
+            builder.Services.AddControllers(); //Đăng ký Controller để ASP.NET hiểu và xử lý các route API.
 
             // 6. Swagger/OpenAPI với JWT support
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(c =>
+            builder.Services.AddSwaggerGen(c =>                     //Đăng ký Swagger để tạo UI test API.
             {
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -127,7 +135,7 @@ namespace DrugPreventionAPI
                 });
             });
 
-            // 1) Đăng ký CORS và cho phép header Authorization
+            // 1) Đăng ký CORS và cho phép header Authorization. cho phép trình duyệt gọi API từ frontend (nơi có host khác với backend) — thường là ứng dụng React, Angular
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend", policy =>
@@ -136,7 +144,7 @@ namespace DrugPreventionAPI
                       //.WithOrigins("http://localhost:5173/")   // hoặc .AllowAnyOrigin() khi dev
                       .AllowAnyOrigin()
                       .AllowAnyMethod()
-                      .WithHeaders("Content-Type", "Authorization"); // <-- thêm Authorization ở đây
+                      .WithHeaders("Content-Type", "Authorization"); // <-- thêm Authorization ở đây, truyền JWT token trong header.
                 });
             });
 
@@ -161,10 +169,10 @@ namespace DrugPreventionAPI
             app.UseCors("AllowFrontend");
             app.UseHttpsRedirection();
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+            app.UseAuthentication(); //Kiểm tra token JWT.
+            app.UseAuthorization();  //Kiểm tra quyền của user
 
-            app.MapControllers();
+            app.MapControllers(); //Ánh xạ controller theo route.
 
             app.Run();
         }
