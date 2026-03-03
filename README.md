@@ -27,7 +27,7 @@ DrugPreventionAPI is a C# backend application designed to support drug preventio
 
 - **Language**: C#
 - **Framework**: .NET Core
-- **Database**: Entity Framework Core
+- **Database**: MSSQL, Entity Framework Core
 
 ## Getting Started
 
